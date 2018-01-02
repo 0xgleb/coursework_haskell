@@ -1,0 +1,202 @@
+* Introduction
+
+  The purpose of this project is to compare to popular languages in different programming paradigms: Haskell vs Python. Haskell is one of the most popular functional programming languages and one of the most "functional" in the sense that it doesn't support imperative programming or OOP. If you type into Google "Haskell vs " the first thing that comes up is "Haskell vs Python" which is one of the reasons I decided to compare Haskell with Python. Also Python is very different to Haskell, so we can compare lots of different aspects and different ideas.
+
+  Here are some differences between Haskell and Python:
+
+  |---------------------+------------------------------+----------------------------------------------------------------------|
+  |                     | Haskell                      | Python                                                               |
+  |---------------------+------------------------------+----------------------------------------------------------------------|
+  | Paradigms           | Functional                   | OOP, imperative, procedural. Has elements of functional programming. |
+  | Evaluation strategy | Lazy/non-strict              | Strict                                                               |
+  | Type system         | Static, strong inferred      | Dynamic, strong, duck.                                               |
+  | Execution (default) | Compiled or intepreted (GHC) | Interpreted (CPython)                                                |
+  |---------------------+------------------------------+----------------------------------------------------------------------|
+
+  Python is one year younger than Haskell and some of it's features were influenced by Haskell.
+  
+* Syntax
+
+* Procedural, object orientied, and functional programming.
+** Imperative and declarative programming
+   *Imperative programming* is a programming paradigm that uses statements that change a program's state.
+
+   *Declarative programming* is a programming paradigm that expresses the logic of a computation without describing the order of instructions. It tries to describe what needs to be accomplished instead of describing how to accomplish it.
+
+   So the difference between imperative programming and declarative programming is that declarative programming doesn't specify the order of instructions.
+** Expressiveness
+   
+   Let's take a look at several code examples in Python and Haskell.
+
+*** Hello World
+
+    Python:
+
+    #+BEGIN_SRC python
+    print "Hello World"
+    #+END_SRC
+
+    Haskell:
+
+    #+BEGIN_SRC haskell
+    main :: IO () -- type declaration is not necessary, if I didn't specify it then the compiler would derive it
+    main = print "Hello World"
+    #+END_SRC
+
+*** A program that reads a name and print "Hello <username>"
+
+    Python:
+
+    #+BEGIN_SRC python
+
+    #+END_SRC
+
+    Haskell (procedural IO style):
+
+    #+BEGIN_SRC haskell
+    main :: IO ()
+    main = do name <- getLine
+              print ("Hello " ++ name)
+    #+END_SRC
+
+    Haskell (functional style):
+
+    #+BEGIN_SRC haskell
+    main :: IO ()
+    main = getLine >>= print . ("Hello " ++)
+    #+END_SRC
+
+** Polymorphism
+
+   Both Haskell and Python have polymorphism, however there are sertain differences. Haskell doesn't support OOP, so it has a different types of polymorphisms: parametric polymorphism and ad hoc polymorhpism. For parametric polymorphism Haskell uses type variables.
+
+   For example, let's take a look at identity function.
+
+   #+BEGIN_SRC haskell
+   id :: a -> a
+   id x = x
+   #+END_SRC
+
+   ~a~ can be replaced with any type. If we want to use a type that has specific function implemented for it then we use type classes. A type class defines a list of variables and/or functions. A type implements the type class if it implements all the functions.
+
+   #+BEGIN_SRC haskell
+   class Show a where
+       show :: a -> String
+
+   data Example = Example
+
+   instance Show Example where
+       show Example = "Example"
+   #+END_SRC
+
+   Now we can use this with parametric polymorhpism.
+
+   #+BEGIN_SRC haskell
+   showAndReverse :: Show a => a -> String
+   showAndReverse = reverse . show
+   #+END_SRC
+
+* Haskell vs functional elements of Python
+* Strict and lazy/non-strict evaluation
+
+  Haskell has a very interesting execution scheme. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing wheen it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this funciton ~foldl'~ from the ~Data.List~ module, everything's ok.
+
+** How lazy evaluation in Haskell works?
+
+*** Graph reduction
+
+    Haskell programs are executed by evaluating expressions. The primary idea is function application. Here is a simple function:
+
+    #+BEGIN_SRC haskell
+    square x = x*x
+    #+END_SRC
+
+    Let's see how the following expression gets evaluated:
+
+    #+BEGIN_SRC haskell
+    square (1+2)
+    => (1+2)*(1+2) -- replacing the left hand side
+    => 3*(1+2)
+    => 3*3
+    => 9
+    #+END_SRC
+
+    We calculated ~(1+2)~ twice, to avoid that we use graph reduction method. In this graph every block is a function application. Our situation can be represented by the following graph:
+
+    [[https://hackhands.com/data/blogs/ClosedSource/lazy-evaluation-works-haskell/assets/blocks-square-0.png]]
+
+    This representation is similar to the way the compiler actually represents expressions with pointers. When a programmer defines a function they define a reduction rule, then when the function is applied the graph gets reduced until it becomes a basic expression. Any expression can be represented using graphs.
+
+    Our function corresponds with this rule:
+
+    [[https://hackhands.com/data/blogs/ClosedSource/lazy-evaluation-works-haskell/assets/blocks-square-rule.png]]
+    
+    ~x~ is a placeholder for a subgraph. And when arguments get duplicated they point to the same subgraph, hence identical graphs don't get reduced multiple times.
+
+    Any subgraph that follows the rules is called a reducible expression or redex. In our case with have two redexes: function ~square~ and addition ~+~. If we start with ~square~ then we'll get this:
+
+    [[https://habrastorage.org/getpro/habr/post_images/295/429/ede/295429ede71982a0ce68544095ffed35.png]]
+
+    At every step the highlighted rectangle gets updated.
+
+*** Normal form
+
+    If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though these are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
+
+    [[https://habrastorage.org/getpro/habr/post_images/bd7/1ca/4f6/bd71ca4f639ea360db4b9966446e5459.png]]
+
+    By definition a normal graph needs to be finite and it shouldn't have cycles. Infinite recursion is not normal.
+
+    #+BEGIN_SRC haskell
+    ones = 1 : ones
+    #+END_SRC
+
+    Corresponds to the following cyclic graph.
+
+    [[https://habrastorage.org/getpro/habr/post_images/76b/740/316/76b740316cb9f87f024dbe341cd65acc.png]]
+
+    It's not a redex and also not in the normal form - the tail of the list points to the list itself, making an infinite recursion.
+
+    In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). If a graph is in WHNF then it's top node is a constructor. Like expression ~(7+12):[]~ or graph
+
+    [[https://habrastorage.org/getpro/habr/post_images/1ec/bb9/b87/1ecbb9b873d806a42ef7e5e42aa49a16.png]]
+
+    is in WHNF, it's top node is a constructor of a list ~(:)~. And it's not the normal form because the first argument is a redex.
+
+    List ~ones~ is also in WHNF, it's top node is a constructor. In Haskell we can create and use infinite lists! They work just fine.
+
+** Execution order, lazy evaluation
+
+   Often expressions have multiple redexes. Does the order at which we reduce them matter?
+
+   Most languages use the strategy that reduces arguments to the normal form before reducing the function. However, most Haskell compilers use a different evaluation order called *lazy*. It first reduces the top function application. That may require calculating some of the arguments, but only as many as it needs. Let's take a look at this expression with pattern matching. The arguments will get evaluated from left to right until the top node contains a constructor. If pattern matching isn't used then the arguments don't get evaluated. If you pattern match a constructor then the argument gets reduced to WHNF.
+
+   For example:
+
+   #+BEGIN_SRC haskell
+   (&&) :: Bool -> Bool -> Bool
+   True  && x = x
+   False && x = False
+   #+END_SRC
+
+   This defines two reduction rules:
+
+   [[https://habrastorage.org/getpro/habr/post_images/dc4/eed/151/dc4eed15184fe1bc3325378d5c7a1706.png]]
+
+   [[https://habrastorage.org/getpro/habr/post_images/dc4/eed/151/dc4eed15184fe1bc3325378d5c7a1706.png]]
+
+   Now let's take a look at this expression:
+
+   #+BEGIN_SRC haskell
+   ('H' == 'i') && ('a' == 'm')
+   #+END_SRC
+
+   Both of the arguments are redexes. Cause of pattern matching the first argument will get evaluated. Then the graph will get reduced without reducing the second argument.
+
+* Algebraic data types vs classes
+* Dynamic types vs static types
+* Non-pure functions in Haskell and Python
+* Debugging
+* Fields vs lens
+* Concurrency
+* Use cases
