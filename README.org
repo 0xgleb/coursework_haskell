@@ -51,72 +51,55 @@
 
    This does exactly the same thing. First it prints "What's your name", then it reads user's input and then redirects it to ~print . (++ "!") . ("Hello " ++)~. This is a composition prints the result after adding the lines. This is a more compact way of writing that and it doesn't use the ~name~ variable.
 
-** GHCi
+** Function purity
 
-   GHC (Glasgow Haskell Compiler) is the standard Haskell compiler. GHCi is a command line interactive environment where you can execute Haskell code without writing it to a file.
+   Haskell is very different from most languages. In Haskell all your variables are immutable. This means that you don't really have variables, you only have constants. Also in Haskell all functions are pure. A pure function is such a function that any time it gets called with the same arguments returns the same result. This means that functions can't modify global state and don't get effected by anything that happens. This makes pure functions very easy to test and it makes code debugging much easier.
 
-   Let's start by looking at simple expressions in GHCi.
+** Lazy evaluation
 
-*** Numbers
+   Another thing that is makes Haskell very different from typical programming languages is the fact that by default it uses lazy evaluation. This means that functions won't get evaluated until their results are needed. This means that when a program is executed it won't do unnecessary computations. I talk more about evaluation strategies in Haskell and how it's different from the one used in Python further in this coursework.
 
-   #+BEGIN_SRC haskell
-   Prelude> 10
-   10
-   Prelude> 10 + 61
-   71
-   Prelude> (10 + 61) ^ 2
-   5041
-   Prelude> (10 + 61) ** 2
-   5041.0
-   Prelude> (10 - 61) / 20
-   -2.55
+** Function definition
+
+   Let's define the square function ~f~ in both Python and Haskell. Here is how it would look like in Python:
+
+   #+BEGIN_SRC python
+   def f(x, y):
+       return x*x + y*y
    #+END_SRC
 
-   Here are some basic arithmetic operations. The only ones that are worth explaining are ~(^)~ and ~(**)~. The difference between these 2 is that ~(^)~ only works with non-negative integer powers. And ~(**)~ requires both arguments to be floating.
+   And now in Haskell:
+   
+   #+BEGIN_SRC haskell
+   f x y = x*x + y*y
+   #+END_SRC
 
-*** Lists
+   In Haskell to pass arguments into a function we don't use brackets and/or commas, we separate arguments with spaces. As you can see the definition is very simple and it doesn't use any unnecessary syntax like ~def~ or ~return~. It's just function name, arguments and what it returns.
 
-    #+BEGIN_SRC haskell
-    Prelude> [1, 2, 3, 4, 5]
-    [1,2,3,4,5]
-    Prelude> [1..5]
-    [1,2,3,4,5]
-    Prelude> 0 : [1..5]
-    [0,1,2,3,4,5]
-    Prelude> 1 : []
-    [1]
-    #+END_SRC
+   In Haskell functions and types are the two primary things and everything is centered around them, so it makes sense why it's very easy to define them.
 
-    ~(:)~ takes a value and a list of values of the same type and returns the list with the first argument in the beginning of the list.
+** Basic types and introduction to type classes
 
-    In Haskell all elements of a list must have the same type.
+   In Haskell you don't need to explicitly define types of functions or variables, the compiler will derive it for you. However, it's one of the best practices to explicitly write function and variable types. Let's define the previous function with a type now and then write the main function to test the ~f~ function.
 
-    #+BEGIN_SRC haskell
-    Prelude> ['?', 1]
-    
-    <interactive>:21:7: error:
-        * No instance for (Num Char) arising from the literal `1'
-        * In the expression: 1
-          In the expression: ['?', 1]
-          In an equation for `it': it = ['?', 1]
-    #+END_SRC
+   #+BEGIN_SRC haskell
+   f :: Int -> Int -> Int
+   f x y = x*x + y*y
 
-*** Characters and strings
+   main = print (f 2 3)
+   #+END_SRC
 
-    In Haskell strings are just lists of characters. For characters we use single quotes and for strings double quotes.
-
-    #+BEGIN_SRC haskell
-    Prelude> ['H', 'e', 'l', 'l', 'o']
-    "Hello"
-    Prelude> "Hello"
-    "Hello"
-    Prelude> "test" == ['t', 'e', 's', 't']
-    True
-    #+END_SRC
-
-** Variables and functions
-** Types
-** Type classes
+** Basic minimum of Haskell
+** Brackets
+** Useful things, boeez
+** Functional style
+** Higher order functions
+** Making types
+** Recursive types
+** Infinite structures
+** Functors
+** Applicative functors
+** Monads
 ** IO
 
 * Procedural, object orientied, and functional programming.
