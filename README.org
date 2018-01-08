@@ -192,6 +192,44 @@
    #+END_SRC
 
    Both of the arguments are redexes. Cause of pattern matching the first argument will get evaluated. Then the graph will get reduced without reducing the second argument.
+   
+** Performance
+
+   It's not hard to prove that for lazy evaluation we would need fewer number of calculations or the same as for eager evaluation. Also it can compute expressions with errors in it, such as
+
+   #+BEGIN_SRC haskell
+   a = 1
+   b = 2
+   (a == b) && (1 == (b/0))
+   #+END_SRC
+
+   The second argument of ~(&&)~ will never get evaluated, hence the second argument of the second ~(==)~ will never get evaluated, thus we'll never divide by zero and get an exception.
+
+   However, if we look at the memory usage we can get some problems. Sometimes an expression reduced to normal form can use more memory than a redex, and it's vice versa. Let's take a look at examples of both cases.
+
+   #+BEGIN_SRC haskell
+   enumFromTo 1 1000
+   #+END_SRC
+
+   This expression generates a list with numbers from 1 to 1000. The list itself takes much more space than the expression.
+
+   On the other hand we have situations where a simple expression would use ~foldl 0 [1..10^8]~ gigabytes of RAM to evaluate lazily.
+   
+   Here is another example:
+
+   #+BEGIN_SRC haskell
+   ((((0 + 1) + 2) + 3) + 4)
+   #+END_SRC
+
+   The graph that represents this expression takes more space than the normal form of the expression - ~10~.
+
+   However Haskell allows you to force reduction using the ~seq~ combinator.
+
+   #+BEGIN_SRC haskell
+   seq :: a -> b -> b
+   #+END_SRC
+
+   If you look at the type signature you may think that it's exactly the same as the ~const~ function, however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l ...~ to force Haskell to finish reading the list. This would just force it to reading the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l) ...~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
 
 * Algebraic data types vs classes
 * Dynamic types vs static types
