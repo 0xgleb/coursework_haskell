@@ -78,7 +78,7 @@
 
    In Haskell functions and types are the two primary things and everything is centered around them, so it makes sense why it's very easy to define them.
 
-** Basic types and introduction to type classes
+** Introduction to the type system
 
    In Haskell you don't need to explicitly define types of functions or variables, the compiler will derive it for you. However, it's one of the best practices to explicitly write function and variable types. Let's define the previous function with a type now and then write the main function to test the ~f~ function.
 
@@ -89,10 +89,227 @@
    main = print (f 2 3)
    #+END_SRC
 
+   But what if we want function ~f~ to work with all numbers and not just integers. The first solution to that would be to not define the type of ~f~, in that case our file would look like this:
+
+   #+BEGIN_SRC haskell
+   f x y = x*x + y*y
+
+   main = print (f 2.1 4)
+   #+END_SRC
+
+   GHC (Glasgow Haskell Compiler) is the default Haskell compiler. However, because Haskell can be both compiler and intepreted there is an interactive environment GHCi, which you can use to run code without making a file for it. It can also tell us the type of that function, so let's use it to find the type.
+
+   #+BEGIN_SRC haskell
+   Prelude> :load sum_squares.hs 
+   [1 of 1] Compiling Main             ( sum_squares.hs, interpreted )
+   Ok, modules loaded: Main.
+   *Main> :t f
+   f :: Num a => a -> a -> a
+   *Main> 
+   #+END_SRC
+
+   Ok, let's figure out what that type is.
+
+   | Type         | Meaning                                                                          |
+   |--------------+----------------------------------------------------------------------------------|
+   | Int          | Integer type                                                                     |
+   | Int -> Int   | A function that takes an integer and returns an integer                          |
+   | Float -> Int | A function that takes a float and returns an integer                             |
+   | a -> Int     | A function that takes a value of any type and returns an integer                 |
+   | a -> a       | A function that takes a value of any type and returns something of the same type |
+
+   In Haskell type ~a -> a -> a~ is the same as ~a -> (a -> a)~. This means that this function takes a value of any type and returns a function that takes an argument of the same type and returns something of the same type, so basically it's a function with two arguments. The benefit of that is that we can give the function only one argument and get a valid expression which is a function. This is called partial application.
+
+   When in a type declaration you see something starting with a small letter, it means that it's a type variable. Type variables give us parametric polymorphism. Also, for example, if you have a function that takes two arguments of any type, but both arguments have the same type, you can specify that using type variables.
+
+   But our function type is not just ~a -> a -> a~, it also has prefix ~Num a =>~. This means that type a is in the type class ~Num~. Type classes are like interfaces in OOP languages. They define a list of variables and/or functions. A type is in the type class if it implements all the functions from the type class.
+
+   #+BEGIN_SRC haskell
+   class Num a where
+     (+) :: a -> a -> a
+     (-) :: a -> a -> a
+     (*) :: a -> a -> a
+     negate :: a -> a
+     abs :: a -> a
+     signum :: a -> a
+     fromInteger :: Integer -> a
+   #+END_SRC
+
+   Here is the definition of the type class ~Num~. In Haskell operators are just normal functions, so we can define them like that. So by writing ~Num a =>~ we restrict all possible types only to the ones that implement the functions listed above. We are going to come back to type classes later.
+
+   So the type ~Num a => a -> a -> a~ means that it's a function that takes a number and returns a function that takes another number of the same type and then returns a number of the same type. Technically all functions in Haskell take only one argument. But any function that takes two arguments can be represented as a function that takes one argument and returns a function. So the expression ~f 3 4~ is equivalent to ~(f 3) 4~ and ~f 3~ is a function.
+
+   To create functions we can use another form - lambda functions.
+   
+   #+BEGIN_SRC haskell
+   f = \x y -> x*x + y*y
+   #+END_SRC
+
 ** Basic minimum of Haskell
-** Brackets
-** Useful things, boeez
+
+   Ok, now let's go through the basics of any programming language.
+
+*** Arithmetics
+
+    #+BEGIN_SRC haskell
+    3 + 2 * 6 / 3 <=> 3 + ((2 * 6) / 3)
+    #+END_SRC
+
+*** Logic
+
+    #+BEGIN_SRC haskell
+    True || False <=> True
+    True && False <=> False
+    True == False <=> False
+    True /= False <=> True
+    #+END_SRC
+
+*** Powers
+
+    #+BEGIN_SRC haskell
+    x ^ n  -- for non-negative integer powers
+    x ** y -- for floating numbers
+    #+END_SRC
+
+*** Lists
+
+    #+BEGIN_SRC haskell
+    []             -- empty list
+    [1, 2, 3]      -- a list of numbers
+    ["foo", "bar"] -- a list of strings
+    1:[2, 3]       -- [1, 2, 3]. (:) prepends an element to a list
+    1:2:[]         -- [1, 2]
+    [1,2] ++ [3,4] -- [1, 2, 3, 4]. (++) joins two lists
+    [1,2] ++ ["?"] -- compilation error
+    [1..4]         -- [1, 2, 3, 4]
+    [1,3..10]      -- [1, 3, 5, 7, 9]
+    [2,3,5,7..100] -- error, the compiler is not that smart
+    [5,4..1]      -- [5, 4, 3, 2, 1]
+    #+END_SRC
+
+*** String
+
+    In Haskell strings are just lists of chars.
+
+    #+BEGIN_SRC haskell
+    'a' :: Char
+    "a" :: [Char] -- :: String
+    "ab" -- ['a', 'b']
+    #+END_SRC
+
+*** Tuples
+
+    #+BEGIN_SRC haskell
+    -- All of these tuples are valid
+    (2,"foo")
+    (3,'a',[2,3])
+    ((2,"a"),"c",3)
+
+    fst (x, y) = x
+    snd (x, y) = y
+
+    fst (x, y, z) -- ERROR: fst :: (a, b) -> a
+    snd (x, y, z) -- ERROR: snd :: (a, b) -> b
+    #+END_SRC
+
+** Applying functions
+
+   Here are two useful operator that are used very often.
+
+   #+BEGIN_SRC haskell
+   (.) :: (b -> c) -> (a -> b) -> a -> c
+   (.) f g x = f (g x)
+
+   ($) :: (a -> b) -> a -> b
+   ($) f x = f x
+   #+END_SRC
+
+   Here are some examples:
+
+   #+BEGIN_SRC haskell
+   f g h x = (((f g) h) x)
+
+   f g $ h x   = f g (h x)
+   f $ g h x   = f (g h x) = f ((g h) x)
+   f $ g $ h x = f (g (h x))
+
+   (f . g) x     = f . g $ x     = f (g x)
+   (f . g . h) x = f . g . h $ x = f (g (h x))
+   #+END_SRC
+
+** More on the syntax
+
+*** Infix and prefix notation
+
+    #+BEGIN_SRC haskell
+    square :: Num a => a -> a
+    square x = x ^ 2
+    #+END_SRC
+
+    Any infix operator can be used in prefix notation.
+
+    #+BEGIN_SRC haskell
+    square' x = (^) x 2
+    square'' x = (^2) x
+    #+END_SRC
+
+    We can remove ~x~ from the right hand side, this is called η-reduction.
+
+    #+BEGIN_SRC haskell
+    square''' = (^2)
+    #+END_SRC
+
+    All these functions are identical.
+    
+    And functions in Haskell can be used in infix notation as well.
+
+    #+BEGIN_SRC haskell
+    add :: Num a => a -> a -> a
+    add = (+)
+
+    5 `add` 4 = add 5 4 = 9
+    #+END_SRC
+
+*** Conditions
+
+    Type class ~Ord~ is for types that can be ordered.
+
+    #+BEGIN_SRC haskell
+    absolute :: (Ord a, Num a) => a -> a
+    absolute x = if x >= 0 then x else -x
+    #+END_SRC
+
+    In Haskell if statements must always have ~then~ and ~else~.
+
+    Here is another way to write that function:
+
+    #+BEGIN_SRC haskell
+    absolute' x
+        | x >= 0 = x
+        | otherwise = -x
+    #+END_SRC
+
+    In Haskell indentation is very important. Just like in Python programs with incorrect indentation will not work or, in some cases, will work, but not the way it was intended. Haskell uses spaces instead of tabs, if you try to use tabs then the program won't compile.
+
 ** Functional style
+
+   Let's introduce a problem and then solve it using first Python and then Haskell.
+
+   We want a function that takes a list of integers and returns the sum of all even numbers in that list.
+
+   #+BEGIN_SRC
+   [1, 2, 3, 4, 5] -> 2 + 4 -> 6
+   #+END_SRC
+
+   #+BEGIN_SRC python
+   def evenSum(l):
+       result = 0
+       for x in l:
+           if(x % 2 == 0):
+               result += x
+       return result  
+   #+END_SRC
+
 ** Higher order functions
 ** Making types
 ** Recursive types
