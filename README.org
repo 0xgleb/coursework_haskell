@@ -392,8 +392,16 @@
 
    #+BEGIN_SRC haskell
    evenSum l = mysum $ filter even l
-       where mysum []     = 0
-             mysum (x:xs) = x + mysum xs
+       where mysum n []     = 0
+             mysum n (x:xs) = mysum (n+x) xs
+   #+END_SRC
+
+   Now, what is ~foldl~?
+
+   #+BEGIN_SRC haskell
+   foldl :: (a -> b -> a) -> a -> [b] -> a
+   foldl op prev []     = prev
+   foldl op prev (x:xs) = foldl op (op `prev` x) xs
    #+END_SRC
 
 ** Making types
