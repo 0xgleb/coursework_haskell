@@ -19,10 +19,6 @@
 
   Most programmers know Python to some extend, however very few people know Haskell. This is why I'm going to start this comparison by introducing basics of Haskell.
 
-** Program structure
-
-   The program structure in Haskell is similar to the program structure of C. We have the main "function" that runs other "functions" and that's what makes everything work. The reason why I wrote function in quotes is because these are not Haskell functions, these are IO actions (similar to procedures).
-
 ** Hello World +
 
    #+BEGIN_SRC haskell
@@ -59,7 +55,7 @@
 
    Another thing that is makes Haskell very different from typical programming languages is the fact that by default it uses lazy evaluation. This means that functions won't get evaluated until their results are needed. This means that when a program is executed it won't do unnecessary computations. I talk more about evaluation strategies in Haskell and how it's different from the one used in Python further in this coursework.
 
-** Function definition
+** Defining functions
 
    Let's define the square function ~f~ in both Python and Haskell. Here is how it would look like in Python:
 
@@ -310,7 +306,96 @@
        return result  
    #+END_SRC
 
+   We can't implement it in Haskell exactly the same way because it doesn't have loops or variables. So here is how we can implement it in Python without mutating variables and using loops.
+
+   #+BEGIN_SRC python
+   def accumSum(l, n):
+       if(len(l) == 0):
+           return n
+       else:
+           x, *xs = l
+           if(x % 2 == 0):
+               return accumSum(xs, x + n)
+           else:
+               return accumSum(xs, n)
+
+   def evenSum(l):
+       return accumSum(l, 0)
+   #+END_SRC
+
+   Before we start, here are some Haskell function we'll use.
+
+   #+BEGIN_SRC haskell
+   even :: Integral a => a -> Bool -- returns True if the given number is even
+   head :: [a] -> a                -- returns the first element of the given list
+   tail :: [a] -> [a]              -- returns the given list without the first element
+   #+END_SRC
+
+   Here is our first solution:
+
+   #+BEGIN_SRC haskell
+   evenSum :: [Integer] -> Integer
+   evenSum l = accumSum 0 l
+
+   accumSum :: Integer -> [Integer] -> Integer
+   accumSum n l = if l == []
+                     then n
+                     else let x  = head l
+                              xs = tail l
+                          in if even x
+                                then accumSum (n+x) xs
+                                else accumSum n xs
+   #+END_SRC
+
+   We can do several improvements to this piece of code. First we can make the type definition more general (without changing the implementation).
+
+   #+BEGIN_SRC haskell
+   evenSum :: Integral a => [a] -> a
+   #+END_SRC
+
+   We don't want ~accumSum~ to be a global variable, so we can make it local using ~where~ clause. Also we can use pattern matching instead of ~head~ and ~tail~. Then we can use η-reduction to get this:
+
+   #+BEGIN_SRC haskell
+   evenSum :: Integral a => [a] -> a
+   evenSum = accumSum 0
+       where accumSum n []     = n
+             accumSum n (x:xs) = if even x
+                                    then accumSum (n+x) xs
+                                    else accumSum x xs
+   #+END_SRC
+
+   Pattern matching is using values instead of variable arguments. We can't use any function we want on the left side - only type constructors, which I will discuss later.
+
+   We can simplify this even more using higher order functions.
+
 ** Higher order functions
+
+   Higher order functions are functions that take another function as one of the arguments. Here are several examples:
+
+   #+BEGIN_SRC haskell
+   filter :: (a -> Bool) -> [a] -> [a]
+   map    :: (a -> b) -> [a] -> [b]
+   foldl  :: (a -> b -> a) -> a -> [b] -> a
+   #+END_SRC
+
+   Function ~filter~ takes a function of type ~a -> Bool~ and a list ~[a]~. It returns a list that only contains the elements of the given list that return ~True~ when the given function is applied.
+
+   ~map~ takes a function and a list and applies the function to every element of the list.
+
+   #+BEGIN_SRC haskell
+   filter even [1..5] = [2, 4]
+
+   map (*2) [1..5] = [2,4,6,8,10]
+   #+END_SRC
+
+   So let's use this.
+
+   #+BEGIN_SRC haskell
+   evenSum l = mysum $ filter even l
+       where mysum []     = 0
+             mysum (x:xs) = x + mysum xs
+   #+END_SRC
+
 ** Making types
 ** Recursive types
 ** Infinite structures
