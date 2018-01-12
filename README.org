@@ -15,7 +15,109 @@
 
   Python is one year younger than Haskell and some of it's features were influenced by Haskell.
   
-* Syntax
+* Basics of Haskell
+
+  Most programmers know Python to some extend, however very few people know Haskell. This is why I'm going to start this comparison by introducing basics of Haskell.
+
+** Program structure
+
+   The program structure in Haskell is similar to the program structure of C. We have the main "function" that runs other "functions" and that's what makes everything work. The reason why I wrote function in quotes is because these are not Haskell functions, these are IO actions (similar to procedures).
+
+** Hello World +
+
+   #+BEGIN_SRC haskell
+   main :: IO ()
+   main = print "Hello World!"
+   #+END_SRC
+
+   Now let's write a console program that asks the user for their name and then prints "Hello <username>!"
+
+   Haskell's IO parts of the program can look very similar to "normal" languages.
+
+   #+BEGIN_SRC haskell
+   main :: IO ()
+   main = do
+       print "What's your name?"
+       name <- getLine
+       print ("Hello " ++ name ++ "!")
+   #+END_SRC
+
+   But we can write this in functional style and it would look like this:
+
+   #+BEGIN_SRC haskell
+   main :: IO ()
+   main = print "What's your name?" >> getLine >>= print . (++ "!") . ("Hello " ++)
+   #+END_SRC
+
+   This does exactly the same thing. First it prints "What's your name", then it reads user's input and then redirects it to ~print . (++ "!") . ("Hello " ++)~. This is a composition prints the result after adding the lines. This is a more compact way of writing that and it doesn't use the ~name~ variable.
+
+** GHCi
+
+   GHC (Glasgow Haskell Compiler) is the standard Haskell compiler. GHCi is a command line interactive environment where you can execute Haskell code without writing it to a file.
+
+   Let's start by looking at simple expressions in GHCi.
+
+*** Numbers
+
+   #+BEGIN_SRC haskell
+   Prelude> 10
+   10
+   Prelude> 10 + 61
+   71
+   Prelude> (10 + 61) ^ 2
+   5041
+   Prelude> (10 + 61) ** 2
+   5041.0
+   Prelude> (10 - 61) / 20
+   -2.55
+   #+END_SRC
+
+   Here are some basic arithmetic operations. The only ones that are worth explaining are ~(^)~ and ~(**)~. The difference between these 2 is that ~(^)~ only works with non-negative integer powers. And ~(**)~ requires both arguments to be floating.
+
+*** Lists
+
+    #+BEGIN_SRC haskell
+    Prelude> [1, 2, 3, 4, 5]
+    [1,2,3,4,5]
+    Prelude> [1..5]
+    [1,2,3,4,5]
+    Prelude> 0 : [1..5]
+    [0,1,2,3,4,5]
+    Prelude> 1 : []
+    [1]
+    #+END_SRC
+
+    ~(:)~ takes a value and a list of values of the same type and returns the list with the first argument in the beginning of the list.
+
+    In Haskell all elements of a list must have the same type.
+
+    #+BEGIN_SRC haskell
+    Prelude> ['?', 1]
+    
+    <interactive>:21:7: error:
+        * No instance for (Num Char) arising from the literal `1'
+        * In the expression: 1
+          In the expression: ['?', 1]
+          In an equation for `it': it = ['?', 1]
+    #+END_SRC
+
+*** Characters and strings
+
+    In Haskell strings are just lists of characters. For characters we use single quotes and for strings double quotes.
+
+    #+BEGIN_SRC haskell
+    Prelude> ['H', 'e', 'l', 'l', 'o']
+    "Hello"
+    Prelude> "Hello"
+    "Hello"
+    Prelude> "test" == ['t', 'e', 's', 't']
+    True
+    #+END_SRC
+
+** Variables and functions
+** Types
+** Type classes
+** IO
 
 * Procedural, object orientied, and functional programming.
 ** Imperative and declarative programming
@@ -192,6 +294,25 @@
    #+END_SRC
 
    Both of the arguments are redexes. Cause of pattern matching the first argument will get evaluated. Then the graph will get reduced without reducing the second argument.
+   
+   Here is a standard use case of ~seq~ that every Haskell programmer should know - strict left fold. Here is how ~foldl~ is defined in Prelude (Haskell's standard library):
+
+   #+BEGIN_SRC haskell
+   foldl :: (a -> b -> a) -> a -> [b] -> a
+   foldl f a []     = a
+   foldl f a (x:xs) = foldl f (f a x) xs
+   #+END_SRC
+
+   Say we want to sum all numbers from 1 to 100 (~[1..100]~). For that we would use the expression ~foldl (+) 0 [1..100]~. Here is how the evaluation process would look in that case:
+
+   #+BEGIN_SRC haskell
+   foldl (+) 0 [1..100]
+   => foldl (+) 0 (1:[2..100])
+   => foldl (+) (0 + 1) [2..100]
+   => foldl (+) (0 + 1) (2:[3..100])
+   => foldl (+) ((0 + 1) + 2) [3..100]
+   ...
+   #+END_SRC
 
 * Algebraic data types vs classes
 * Dynamic types vs static types
