@@ -1,8 +1,8 @@
 * Introduction
 
-  The purpose of this project is to compare to popular languages in different programming paradigms: Haskell vs Python. Haskell is one of the most popular functional programming languages and one of the most "functional" in the sense that it doesn't support imperative programming or OOP. If you type into Google "Haskell vs " the first thing that comes up is "Haskell vs Python" which is one of the reasons I decided to compare Haskell with Python. Also Python is very different to Haskell, so we can compare lots of different aspects and different ideas.
+  The purpose of this paper is to compare two popular languages and the programming paradigms that they use. Haskell is one of the most popular functional programming languages and one of the most "functional" in the sense that it doesn't support imperative programming or OOP. Python is one of the most popular languages and almost every programmer knows it. Python is very different from Haskell, so we can compare lots of different aspects and different paradigms. Python is one year younger than Haskell and some of it's features were influenced by Haskell, so I will discuss both differences and similarities of the languages.
 
-  Here are some differences between Haskell and Python:
+  Here are some facts about Python and Haskell.
 
   |---------------------+------------------------------+----------------------------------------------------------------------|
   |                     | Haskell                      | Python                                                               |
@@ -13,22 +13,20 @@
   | Execution (default) | Compiled or intepreted (GHC) | Interpreted (CPython)                                                |
   |---------------------+------------------------------+----------------------------------------------------------------------|
 
-  Python is one year younger than Haskell and some of it's features were influenced by Haskell.
-  
 * Basics of Haskell
 
-  Most programmers know Python to some extend, however very few people know Haskell. This is why I'm going to start this comparison by introducing basics of Haskell.
+  Most programmers know Python to some extend, however very few people know Haskell. This is why I'm going to start this comparison with a tutorial on Haskell.
 
-** Hello World +
+** Hello World and more.
 
    #+BEGIN_SRC haskell
    main :: IO ()
    main = print "Hello World!"
    #+END_SRC
 
-   Now let's write a console program that asks the user for their name and then prints "Hello <username>!"
+   Now let's write a console program that asks user to input their name and then prints "Hello <username>!"
 
-   Haskell's IO parts of the program can look very similar to "normal" languages.
+   Haskell's IO parts of the program can look very similar to "normal" programming languages.
 
    #+BEGIN_SRC haskell
    main :: IO ()
@@ -38,45 +36,45 @@
        print ("Hello " ++ name ++ "!")
    #+END_SRC
 
-   But we can write this in functional style and it would look like this:
+   But we can write this in functional style.
 
    #+BEGIN_SRC haskell
    main :: IO ()
    main = print "What's your name?" >> getLine >>= print . (++ "!") . ("Hello " ++)
    #+END_SRC
 
-   This does exactly the same thing. First it prints "What's your name", then it reads user's input and then redirects it to ~print . (++ "!") . ("Hello " ++)~. This is a composition prints the result after adding the lines. This is a more compact way of writing that and it doesn't use the ~name~ variable.
+   We will come back to both of these examples later.
 
 ** Function purity
 
-   Haskell is very different from most languages. In Haskell all your variables are immutable. This means that you don't really have variables, you only have constants. Also in Haskell all functions are pure. A pure function is such a function that any time it gets called with the same arguments returns the same result. This means that functions can't modify global state and don't get effected by anything that happens. This makes pure functions very easy to test and it makes code debugging much easier.
+   Haskell is very different from most languages. In Haskell all variables are immutable. This means that you don't really have variables, you only have constants. Also in Haskell all functions are pure. A pure function a function that any time it gets called with the same arguments returns the same result. Pure functions don't have side effects; they can't print something to console, read files or modify variables. Functions in Haskell are like functions in maths, they are just mappings between types. These properties make testing and debugging code much easier.
 
 ** Lazy evaluation
 
-   Another thing that is makes Haskell very different from typical programming languages is the fact that by default it uses lazy evaluation. This means that functions won't get evaluated until their results are needed. This means that when a program is executed it won't do unnecessary computations. I talk more about evaluation strategies in Haskell and how it's different from the one used in Python further in this coursework.
+   Another aspect that makes Haskell very different from an average programming language is the fact that by default it uses lazy evaluation. This means that functions won't get evaluated until the result is needed. When a program gets executed it won't do unnecessary computations.
 
 ** Defining functions
 
-   Let's define the square function ~f~ in both Python and Haskell. Here is how it would look like in Python:
+   Let's define a function ~f~ that squares a number in both Python and Haskell. Here is how it would look like in Python:
 
    #+BEGIN_SRC python
    def f(x, y):
        return x*x + y*y
    #+END_SRC
 
-   And now in Haskell:
+   And here is the Haskell version:
    
    #+BEGIN_SRC haskell
    f x y = x*x + y*y
    #+END_SRC
 
-   In Haskell to pass arguments into a function we don't use brackets and/or commas, we separate arguments with spaces. As you can see the definition is very simple and it doesn't use any unnecessary syntax like ~def~ or ~return~. It's just function name, arguments and what it returns.
+   In Haskell to pass arguments into a function we don't use brackets and/or commas, we separate arguments with spaces. As you can see the definition is very simple and it doesn't use any unnecessary syntax like ~def~ or ~return~. It's just the function name, arguments and what it returns.
 
    In Haskell functions and types are the two primary things and everything is centered around them, so it makes sense why it's very easy to define them.
 
 ** Introduction to the type system
 
-   In Haskell you don't need to explicitly define types of functions or variables, the compiler will derive it for you. However, it's one of the best practices to explicitly write function and variable types. Let's define the previous function with a type now and then write the main function to test the ~f~ function.
+   In Haskell you don't need to explicitly declare types of functions or variables, the compiler will derive them for you. However, explicitly declaring types of functions and variables is a good practice. Let's declare the type of the previous function and then write a main function to test ~f~.
 
    #+BEGIN_SRC haskell
    f :: Int -> Int -> Int
@@ -85,7 +83,7 @@
    main = print (f 2 3)
    #+END_SRC
 
-   But what if we want function ~f~ to work with all numbers and not just integers. The first solution to that would be to not define the type of ~f~, in that case our file would look like this:
+   But what if we want function ~f~ to work with all numbers and not just integers. The first solution is to remove the type declaration, in that case our file would look like this:
 
    #+BEGIN_SRC haskell
    f x y = x*x + y*y
@@ -93,7 +91,7 @@
    main = print (f 2.1 4)
    #+END_SRC
 
-   GHC (Glasgow Haskell Compiler) is the default Haskell compiler. However, because Haskell can be both compiler and intepreted there is an interactive environment GHCi, which you can use to run code without making a file for it. It can also tell us the type of that function, so let's use it to find the type.
+   GHC (Glasgow Haskell Compiler) is the default Haskell compiler. Haskell can be both compiled and intepreted, which is why there is an interactive environment - GHCi, which you can use to run Haskell code without making a file for it. It can also tell us the type of any defined function. Let's use it to find the type of ~f~.
 
    #+BEGIN_SRC haskell
    Prelude> :load sum_squares.hs 
@@ -106,19 +104,21 @@
 
    Ok, let's figure out what that type is.
 
-   | Type         | Meaning                                                                          |
    |--------------+----------------------------------------------------------------------------------|
-   | Int          | Integer type                                                                     |
+   | Type         | Value                                                                            |
+   |--------------+----------------------------------------------------------------------------------|
+   | Int          | An integer                                                                       |
    | Int -> Int   | A function that takes an integer and returns an integer                          |
    | Float -> Int | A function that takes a float and returns an integer                             |
    | a -> Int     | A function that takes a value of any type and returns an integer                 |
    | a -> a       | A function that takes a value of any type and returns something of the same type |
+   |--------------+----------------------------------------------------------------------------------|
 
-   In Haskell type ~a -> a -> a~ is the same as ~a -> (a -> a)~. This means that this function takes a value of any type and returns a function that takes an argument of the same type and returns something of the same type, so basically it's a function with two arguments. The benefit of that is that we can give the function only one argument and get a valid expression which is a function. This is called partial application.
+   In Haskell type ~a -> a -> a~ is the same as ~a -> (a -> a)~. This means that this is a function that takes an argument of any type and returns a function that takes an argument of the same type and returns something of the same type, so basically it's a function with two arguments. The benefit of this representation is that we can give the function only one argument and get a valid expression which is a function. This is called partial application.
 
    When in a type declaration you see something starting with a small letter, it means that it's a type variable. Type variables give us parametric polymorphism. Also, for example, if you have a function that takes two arguments of any type, but both arguments have the same type, you can specify that using type variables.
 
-   But our function type is not just ~a -> a -> a~, it also has prefix ~Num a =>~. This means that type a is in the type class ~Num~. Type classes are like interfaces in OOP languages. They define a list of variables and/or functions. A type is in the type class if it implements all the functions from the type class.
+   But our function type is not just ~a -> a -> a~, it also has prefix ~Num a =>~. This means that ~a~ is in the type class ~Num~. Type classes are like interfaces in OOP languages. They declare a list of signatures of variables, functions, and types. A type is in a type class if it implements all the members of the type class.
 
    #+BEGIN_SRC haskell
    class Num a where
@@ -131,11 +131,11 @@
      fromInteger :: Integer -> a
    #+END_SRC
 
-   Here is the definition of the type class ~Num~. In Haskell operators are just normal functions, so we can define them like that. So by writing ~Num a =>~ we restrict all possible types only to the ones that implement the functions listed above. We are going to come back to type classes later.
+   Here is the definition of the type class ~Num~. In Haskell operators are just normal functions. By writing ~Num a =>~ we restrict all possible types to only allow the ones that implement the functions listed above.
 
    So the type ~Num a => a -> a -> a~ means that it's a function that takes a number and returns a function that takes another number of the same type and then returns a number of the same type. Technically all functions in Haskell take only one argument. But any function that takes two arguments can be represented as a function that takes one argument and returns a function. So the expression ~f 3 4~ is equivalent to ~(f 3) 4~ and ~f 3~ is a function.
 
-   To create functions we can use another form - lambda functions.
+   To define functions we can use another notation - lambda functions.
    
    #+BEGIN_SRC haskell
    f = \x y -> x*x + y*y
@@ -143,7 +143,7 @@
 
 ** Basic minimum of Haskell
 
-   Ok, now let's go through the basics of any programming language.
+   I will use ~<=>~ to show that two expressions are equivalent. This is not a part of the Haskell syntax.
 
 *** Arithmetics
 
@@ -170,17 +170,17 @@
 *** Lists
 
     #+BEGIN_SRC haskell
-    []             -- empty list
-    [1, 2, 3]      -- a list of numbers
+    [] -- empty list
+    [1, 2, 3] -- a list of numbers
     ["foo", "bar"] -- a list of strings
-    1:[2, 3]       -- [1, 2, 3]. (:) prepends an element to a list
-    1:2:[]         -- [1, 2]
-    [1,2] ++ [3,4] -- [1, 2, 3, 4]. (++) joins two lists
+    1:[2, 3] <=> [1, 2, 3] -- (:) prepends an element to a list
+    1:2:[] <=> [1, 2]
+    [1,2] ++ [3,4] <=> [1, 2, 3, 4] -- (++) joins two lists
     [1,2] ++ ["?"] -- compilation error
-    [1..4]         -- [1, 2, 3, 4]
-    [1,3..10]      -- [1, 3, 5, 7, 9]
+    [1..4] <=> [1, 2, 3, 4]
+    [1,3..10] <=> [1, 3, 5, 7, 9]
     [2,3,5,7..100] -- error, the compiler is not that smart
-    [5,4..1]      -- [5, 4, 3, 2, 1]
+    [5,4..1] <=> [5, 4, 3, 2, 1]
     #+END_SRC
 
 *** String
@@ -192,6 +192,8 @@
     "a" :: [Char] -- :: String
     "ab" -- ['a', 'b']
     #+END_SRC
+
+    This is not very efficient, which is why in most cases people use other data types that represent strings.
 
 *** Tuples
 
@@ -210,7 +212,7 @@
 
 ** Applying functions
 
-   Here are two useful operator that are used very often.
+   Here are two operators that are used very often.
 
    #+BEGIN_SRC haskell
    (.) :: (b -> c) -> (a -> b) -> a -> c
@@ -223,14 +225,14 @@
    Here are some examples:
 
    #+BEGIN_SRC haskell
-   f g h x = (((f g) h) x)
+   f g h x <=> (((f g) h) x)
 
-   f g $ h x   = f g (h x)
-   f $ g h x   = f (g h x) = f ((g h) x)
-   f $ g $ h x = f (g (h x))
+   f g $ h x   <=> f g (h x)
+   f $ g h x   <=> f (g h x) <=> f ((g h) x)
+   f $ g $ h x <=> f (g (h x))
 
-   (f . g) x     = f . g $ x     = f (g x)
-   (f . g . h) x = f . g . h $ x = f (g (h x))
+   (f . g) x     <=> f . g $ x     <=> f (g x)
+   (f . g . h) x <=> f . g . h $ x <=> f (g (h x))
    #+END_SRC
 
 ** More on the syntax
@@ -263,7 +265,7 @@
     add :: Num a => a -> a -> a
     add = (+)
 
-    5 `add` 4 = add 5 4 = 9
+    5 `add` 4 <=> add 5 4 <=> 9
     #+END_SRC
 
 *** Conditions
@@ -306,7 +308,7 @@
        return result  
    #+END_SRC
 
-   We can't implement it in Haskell exactly the same way because it doesn't have loops or variables. So here is how we can implement it in Python without mutating variables and using loops.
+   We can't implement it in Haskell exactly the same way because it doesn't have loops or mutable variables. So here is how we can implement it in Python without mutating variables or using loops.
 
    #+BEGIN_SRC python
    def accumSum(l, n):
@@ -323,10 +325,10 @@
        return accumSum(l, 0)
    #+END_SRC
 
-   Before we start, here are some Haskell function we'll use.
+   Before we start, here are some Haskell functions we will use.
 
    #+BEGIN_SRC haskell
-   even :: Integral a => a -> Bool -- returns True if the given number is even
+   even :: Integral a => a -> Bool -- returns True only if the given number is even
    head :: [a] -> a                -- returns the first element of the given list
    tail :: [a] -> [a]              -- returns the given list without the first element
    #+END_SRC
@@ -347,7 +349,7 @@
                                 else accumSum n xs
    #+END_SRC
 
-   We can do several improvements to this piece of code. First we can make the type definition more general (without changing the implementation).
+   We can do several improvements to this piece of code. First we can make the type declaration more general (without changing the implementation).
 
    #+BEGIN_SRC haskell
    evenSum :: Integral a => [a] -> a
@@ -370,12 +372,14 @@
 
 ** Higher order functions
 
-   Higher order functions are functions that take another function as one of the arguments. Here are several examples:
+   Higher order functions are functions that take another function as an argument. Here are several examples:
 
    #+BEGIN_SRC haskell
    filter :: (a -> Bool) -> [a] -> [a]
    map    :: (a -> b) -> [a] -> [b]
    foldl  :: (a -> b -> a) -> a -> [b] -> a
+   (.)    :: (b -> c) -> (a -> b) -> a -> c
+   ($)    :: (a -> b) -> a -> b
    #+END_SRC
 
    Function ~filter~ takes a function of type ~a -> Bool~ and a list ~[a]~. It returns a list that only contains the elements of the given list that return ~True~ when the given function is applied.
@@ -383,12 +387,12 @@
    ~map~ takes a function and a list and applies the function to every element of the list.
 
    #+BEGIN_SRC haskell
-   filter even [1..5] = [2, 4]
+   filter even [1..5] <=> [2, 4]
 
-   map (*2) [1..5] = [2,4,6,8,10]
+   map (*2) [1..5] <=> [2,4,6,8,10]
    #+END_SRC
 
-   So let's use this.
+   Let's use this.
 
    #+BEGIN_SRC haskell
    evenSum l = mysum $ filter even l
@@ -404,6 +408,10 @@
    foldl op prev (x:xs) = foldl op (prev `op` x) xs
    #+END_SRC
 
+   #+BEGIN_SRC haskell
+   foldl f z [x1,x2,x3,x4] <=> f (f (f (f z x1) x2) x3) x4
+   #+END_SRC
+
    So let's use it for our problem.
 
    #+BEGIN_SRC haskell
@@ -411,7 +419,7 @@
    evenSum = foldl (+) 0 . filter even
    #+END_SRC
 
-** Making your own types
+** Defining your own types
 
 *** type
 
@@ -421,11 +429,11 @@
     type Name = String
     #+END_SRC
 
-    ~Name~ and ~String~ are two identical types. This is useful for making type declarations more meaningful.
+    ~Name~ and ~String~ are the same type. This is useful for making type declarations more meaningful.
 
 *** data
 
-    ~data NewDataType = TypeConstructor AnotherType~ is how we make a new simple type. This code makes a type constructor which is a special function that allows us to create instances of the ~NewDataType~. We don't need to write an implementation for this function, we get it by declaring the new type.
+    ~data NewDataType = TypeConstructor AnotherType~ is how we make a new simple type. This code makes a type constructor which is a special function that allows us to create instances of the ~NewDataType~. We don't need to write an implementation for this function, we get it by defining the type.
 
     #+BEGIN_SRC haskell
     TypeConstructor :: AnotherType -> NewDataType
@@ -438,7 +446,7 @@
     toOriginalType (TypeConstructor thing) = thing
     #+END_SRC
 
-    Constructors don't have to have one argument, they can have multiple or none at all. We can use the name of the type as the constructor name, which what people usually do if they have only one constructor.
+    Constructors can have multiple arguments or none at all. We can use the name of the type as the constructor name, which is what people usually do when there is only one constructor.
 
     #+BEGIN_SRC haskell
     data Thing = Thing
@@ -496,7 +504,7 @@
 
     #+BEGIN_SRC haskell
     Empty :: List a
-    Const :: a -> List a -> List a
+    Cons  :: a -> List a -> List a
     #+END_SRC
 
     Haskell allows the use of special characters in names, this gives us the definition of lists from the standard library:
@@ -505,7 +513,7 @@
     data [] a = [] | a : [a]
     #+END_SRC
 
-    If we tried to print our new list it wouldn't work, because we don't have a conversion to string defined for it. Haskell has a function ~show :: Show a => a -> String~ which is defined in the type class ~Show~. So we can make our ~List~ an instance of ~Show~. However, for predefined type classes, we can use a simpler approach. We can just derive that instance.
+    If we tried to print our new list it wouldn't work, because we don't have a function for conversion to string defined for it. Haskell has function ~show :: Show a => a -> String~ which is defined in the type class ~Show~. So we can make our ~List~ an instance of ~Show~. However, for predefined type classes, we can use a simpler approach. We can just derive that instance.
 
     #+BEGIN_SRC haskell
     data List a = Empty | Cons a (List a)
@@ -542,7 +550,7 @@
    main = print $ take 3 numbers
    #+END_SRC
 
-   The function ~take~ takes the first ~n~ numbers of the given list. If we run this code it won't get stuck, it will print `[1,2,3]`. Because of lazy evalutaion Haskell doesn't calculate all the numbers in the list, but only the ones that it needs.
+   The function ~take~ takes the first ~n~ numbers from the given list. If we run this code it won't get stuck in an infinite recursion, it will print `[1,2,3]`. Because of lazy evalutaion Haskell doesn't calculate all the numbers in the list, but only the ones that it needs.
 
    In this example we just have all positive integers. Let's take a look at a more interesting example with a tree.
 
@@ -567,14 +575,14 @@
 
 ** Functors
 
-   Functor is one of the most important abstractions in Haskell. Basically, it is a type class generalises the ~map~ function.
+   Functor is one of the most important abstractions in Haskell. Basically, it is a type class that generalises the ~map~ function.
 
    #+BEGIN_SRC haskell
    class Functor f where
        fmap :: (a -> b) -> f a -> f b
    #+END_SRC
 
-   The notion of functors comes from maths, and there are laws for it. Unfortunately GHC doesn't support laws in type classes, so it's the programmers work to make sure they work. The relevant to Haskell law is that if we have two functions: ~h :: a -> b~ and ~f :: b -> c~ then for any functor ~fmap (f . h)~ should be the same as ~fmap f . fmap h~. ~<$>~ is a infix operator for ~fmap~.
+   The notion of functors comes from maths, and in maths there are laws for it. Unfortunately GHC doesn't support laws in type classes, so it's programmers' responsibility to make sure they work. The only relevant to Haskell law is that if we have two functions: ~h :: a -> b~ and ~f :: b -> c~ then for any functor ~fmap (f . h)~ should be the same as ~fmap f . fmap h~. ~<$>~ is a infix operator for ~fmap~.
 
    #+BEGIN_SRC haskell
    f <$> x = fmap f x
@@ -634,7 +642,7 @@
 
 ** Applicative functors
 
-   As you know ~Maybe~ is a functor. Here is why we can do this:
+   As you know ~Maybe~ is a functor. This is why we can do this:
 
    #+BEGIN_SRC haskell
    Prelude> negate <$> Just 2
@@ -666,10 +674,10 @@
    Applicative functors also have laws:
 
    #+BEGIN_SRC haskell
-   pure id <*> v              = v                -- identity
-   pure f  <*> pure x         = pure (f x)       -- homomorphism
-   u       <*> pure y         = pure ($ y) <*> u -- interchange
-   pure (.) <*> u <*> b <*> w = u <*> (v <*> w)  -- composition
+   pure id  <*> v             <=> v                -- identity
+   pure f   <*> pure x        <=> pure (f x)       -- homomorphism
+   u        <*> pure y        <=> pure ($ y) <*> u -- interchange
+   pure (.) <*> u <*> b <*> w <=> u <*> (v <*> w)  -- composition
    #+END_SRC
 
    Here are some examples of applicative functors:
@@ -686,9 +694,9 @@
    
    instance Applicative [] where
        pure x = [x]
-       (f:fs) <*> l  = (f <$> l) ++ (fs <*> l)
-       []     <*> _  = []
        _      <*> [] = []
+       []     <*> _  = []
+       (f:fs) <*> l  = (f <$> l) ++ (fs <*> l)
    -- applied every function to every element of the list
    
    data Reader r a = Reader { runReader :: r -> a }
@@ -720,101 +728,142 @@
    Both of these problems can be solved using monads. Here are some definitions:
 
    #+BEGIN_SRC haskell
+   const :: a -> b -> a
+   const x _ = x
+
    class Applicative m => Monad m where
        (>>=) :: m a -> (a -> m b) -> m b
+       (>>) :: m a -> m b -> m b
+       x >> y = x >>= const y -- default implementation
 
-   x >>= f = join $ f <$> x
+   instance Monad Maybe where
+       (Just x) >>= f = f x
+       Nothing  >>= _ = Nothing
 
+   instance Monad [] where
+       (x:xs) >>= f = f x ++ (xs >>= f)
+       []     >>= _ = []
+   #+END_SRC
+
+   Now for the first problem we can do this: 
+
+   #+BEGIN_SRC haskell
+   headMay l >>= headMay
+   #+END_SRC
+
+   ~l~ is the list of lists. And here is how we can solve the second problem:
+
+   #+BEGIN_SRC haskell
+   Prelude> :t (>>= id)
+   (>>= id) :: Monad m => m (m b) -> m b
+   Prelude> [[1..5],[6..10]] >>= id
+   [1,2,3,4,5,6,7,8,9,10]
+   #+END_SRC
+
+   If we import ~Control.Monad~ we'll get several helper functions for working with monads.
+
+   #+BEGIN_SRC haskell
+   join :: m (m a) -> m a
+   join = (>>= id)
+
+   (>=>) :: (a -> m b) -> (b -> m c) -> (a -> m c)
+   (>=>) f h = \x -> f x >>= h
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   Prelude> headMay l = if length l == 0 then Nothing else Just $ head l
+   Prelude> import Control.Monad
+   Prelude Control.Monad> :t join
    join :: Monad m => m (m a) -> m a
-   join x = 
+   Prelude Control.Monad> join [[1..5],[6..10]]
+   [1,2,3,4,5,6,7,8,9,10]
+   Prelude Control.Monad> :t headMay >=> headMay
+   headMay >=> headMay :: [[c]] -> Maybe c
    #+END_SRC
 
 ** IO
 
+   In Haskell functions are pure, however printing to console, reading/writing files, and other IO actions don't give the same results every time you call them. To deal with IO actions Haskell has a special monad - IO monad. This allows us to isolate pure and impure parts of the code. In our program we have ~main~ procedure which has type ~IO ()~.
+
+   #+BEGIN_SRC haskell
+   data () = ()
+   #+END_SRC
+
+*** Printing to console
+
+    #+BEGIN_SRC haskell
+    putStr :: String -> IO ()   -- prints the given string 
+    putStrLn :: String -> IO () -- prints the given string and starts a new line
+    print :: Show a => a -> IO ()
+    print = putStrLn . show
+    #+END_SRC
+
+    Now we can write a "Hello World" program.
+
+    #+BEGIN_SRC haskell
+    main :: IO ()
+    main = print "Hello World!"
+    #+END_SRC
+
+*** Reading user console input
+
+    #+BEGIN_SRC haskell
+    getChar :: IO Char
+    getLine :: IO String
+    #+END_SRC
+
+    Notice that these are not functions, they are IO actions. Now we can write a program that asks for the user's name and prints "Hello <username>!".
+
+    #+BEGIN_SRC haskell
+    main :: IO ()
+    main = print "What's your name?" >> getLine >>= print . ("Hello " ++) . (++ "!")
+    #+END_SRC
+
+*** Do notation
+
+    We can use a simpler notation for monads that is more similar to imperative programming languages.
+
+    #+BEGIN_SRC haskell
+    main :: IO ()
+    main = do print "What's your name?"
+              name <- getLine
+              print $ "Hello " ++ name ++ "!"
+    #+END_SRC
+
+    In this case every line must be an IO action. This syntax is a nicer way of writing this:
+
+    #+BEGIN_SRC haskell
+    main :: IO ()
+    main = print "What's your name?"
+        >> getLine
+        >>= \name -> print ("Hello " ++ name ++ "!")
+    #+END_SRC
+
+    For the compiler these two things are identical. We can use do notation not only for the IO monad, but for any monad.
+
+    #+BEGIN_SRC haskell
+    headMay :: [a] -> Maybe a
+    headMay (x:xs) = Just x
+    headMay []     = Nothing
+
+    headOfHead :: [[a]] -> Maybe a
+    headOfHead l = do h <- headMay l
+                      headMay h
+    #+END_SRC
 
 * Procedural, object orientied, and functional programming.
 ** Imperative and declarative programming
-   *Imperative programming* is a programming paradigm that uses statements that change a program's state.
+   *Imperative programming* is a programming paradigm that uses statements that change a program's state. These programs consist of instruction sequences.
 
    *Declarative programming* is a programming paradigm that expresses the logic of a computation without describing the order of instructions. It tries to describe what needs to be accomplished instead of describing how to accomplish it.
 
    So the difference between imperative programming and declarative programming is that declarative programming doesn't specify the order of instructions.
-** Expressiveness
-   
-   Let's take a look at several code examples in Python and Haskell.
-
-*** Hello World
-
-    Python:
-
-    #+BEGIN_SRC python
-    print "Hello World"
-    #+END_SRC
-
-    Haskell:
-
-    #+BEGIN_SRC haskell
-    main :: IO () -- type declaration is not necessary, if I didn't specify it then the compiler would derive it
-    main = print "Hello World"
-    #+END_SRC
-
-*** A program that reads a name and print "Hello <username>"
-
-    Python:
-
-    #+BEGIN_SRC python
-
-    #+END_SRC
-
-    Haskell (procedural IO style):
-
-    #+BEGIN_SRC haskell
-    main :: IO ()
-    main = do name <- getLine
-              print ("Hello " ++ name)
-    #+END_SRC
-
-    Haskell (functional style):
-
-    #+BEGIN_SRC haskell
-    main :: IO ()
-    main = getLine >>= print . ("Hello " ++)
-    #+END_SRC
 
 ** Polymorphism
-
-   Both Haskell and Python have polymorphism, however there are sertain differences. Haskell doesn't support OOP, so it has a different types of polymorphisms: parametric polymorphism and ad hoc polymorhpism. For parametric polymorphism Haskell uses type variables.
-
-   For example, let's take a look at identity function.
-
-   #+BEGIN_SRC haskell
-   id :: a -> a
-   id x = x
-   #+END_SRC
-
-   ~a~ can be replaced with any type. If we want to use a type that has specific function implemented for it then we use type classes. A type class defines a list of variables and/or functions. A type implements the type class if it implements all the functions.
-
-   #+BEGIN_SRC haskell
-   class Show a where
-       show :: a -> String
-
-   data Example = Example
-
-   instance Show Example where
-       show Example = "Example"
-   #+END_SRC
-
-   Now we can use this with parametric polymorhpism.
-
-   #+BEGIN_SRC haskell
-   showAndReverse :: Show a => a -> String
-   showAndReverse = reverse . show
-   #+END_SRC
-
 * Haskell vs functional elements of Python
 * Strict and lazy/non-strict evaluation
 
-  Haskell has a very interesting execution scheme. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing wheen it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this funciton ~foldl'~ from the ~Data.List~ module, everything's ok.
+  Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this funciton ~foldl'~ from the ~Data.List~ module and use it instead, everything's ok.
 
 ** How lazy evaluation in Haskell works?
 
@@ -842,7 +891,7 @@
 
     This representation is similar to the way the compiler actually represents expressions with pointers. When a programmer defines a function they define a reduction rule, then when the function is applied the graph gets reduced until it becomes a basic expression. Any expression can be represented using graphs.
 
-    Our function corresponds with this rule:
+    Our function corresponds to this rule:
 
     [[https://hackhands.com/data/blogs/ClosedSource/lazy-evaluation-works-haskell/assets/blocks-square-rule.png]]
     
@@ -856,7 +905,7 @@
 
 *** Normal form
 
-    If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though these are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
+    If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
 
     [[https://habrastorage.org/getpro/habr/post_images/bd7/1ca/4f6/bd71ca4f639ea360db4b9966446e5459.png]]
 
@@ -872,19 +921,19 @@
 
     It's not a redex and also not in the normal form - the tail of the list points to the list itself, making an infinite recursion.
 
-    In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). If a graph is in WHNF then it's top node is a constructor. Like expression ~(7+12):[]~ or graph
+    In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). A graph is in WHNF if it's top node is a constructor. Like expression ~(7+12):[]~ or graph
 
     [[https://habrastorage.org/getpro/habr/post_images/1ec/bb9/b87/1ecbb9b873d806a42ef7e5e42aa49a16.png]]
 
-    is in WHNF, it's top node is a constructor of a list ~(:)~. And it's not the normal form because the first argument is a redex.
+    is in WHNF, its top node is a list constructor (~(:)~). And it's not the normal form because the first argument is a redex.
 
-    List ~ones~ is also in WHNF, it's top node is a constructor. In Haskell we can create and use infinite lists! They work just fine.
+    The list ~ones~ is also in WHNF, its top node is a constructor. In Haskell we can create and use infinite lists.
 
 ** Execution order, lazy evaluation
 
    Often expressions have multiple redexes. Does the order at which we reduce them matter?
 
-   Most languages use the strategy that reduces arguments to the normal form before reducing the function. However, most Haskell compilers use a different evaluation order called *lazy*. It first reduces the top function application. That may require calculating some of the arguments, but only as many as it needs. Let's take a look at this expression with pattern matching. The arguments will get evaluated from left to right until the top node contains a constructor. If pattern matching isn't used then the arguments don't get evaluated. If you pattern match a constructor then the argument gets reduced to WHNF.
+   Most languages use the strategy that reduces arguments to the normal form before reducing the function, this is called eager evaluation. However, most Haskell compilers use a different evaluation order called lazy. It first reduces the top function application. That may require calculating some of the arguments, but only as many as it needs. Let's take a look at this expression with pattern matching. The arguments will get evaluated from left to right until the top node contains a constructor. If pattern matching isn't used then the arguments don't get evaluated. If you pattern match a constructor then the argument gets reduced to WHNF.
 
    For example:
 
@@ -906,11 +955,11 @@
    ('H' == 'i') && ('a' == 'm')
    #+END_SRC
 
-   Both of the arguments are redexes. Cause of pattern matching the first argument will get evaluated. Then the graph will get reduced without reducing the second argument.
+   Both of the arguments are redexes. Because of pattern matching the first argument will get evaluated. Then the graph will get reduced without evaluating the second argument.
    
 ** Performance
 
-   It's not hard to prove that for lazy evaluation we would need fewer number of calculations or the same as for eager evaluation. Also it can compute expressions with errors in it, such as
+   It's mathematically proved that lazy evaluation requires fewer or the same number of reductions (calculations) as eager evaluation. Also, in some cases, it can compute expressions with errors without crashing, such as
 
    #+BEGIN_SRC haskell
    a = 1
@@ -918,9 +967,9 @@
    (a == b) && (1 == (b/0))
    #+END_SRC
 
-   The second argument of ~(&&)~ will never get evaluated, hence the second argument of the second ~(==)~ will never get evaluated, thus we'll never divide by zero and get an exception.
+   The second argument of ~(&&)~ will never get evaluated, hence the second argument of the second ~(==)~ will never get evaluated, thus we will never divide by zero and get an exception.
 
-   However, if we look at the memory usage we can get some problems. Sometimes an expression reduced to normal form can use more memory than a redex, and it's vice versa. Let's take a look at examples of both cases.
+   However, the memory usage is a tricky problem. Sometimes an expression reduced to normal form can use more memory than a redex, and vice versa. Let's take a look at examples of both cases.
 
    #+BEGIN_SRC haskell
    enumFromTo 1 1000
@@ -928,8 +977,6 @@
 
    This expression generates a list with numbers from 1 to 1000. The list itself takes much more space than the expression.
 
-   On the other hand we have situations where a simple expression would use ~foldl 0 [1..10^8]~ gigabytes of RAM to evaluate lazily.
-   
    Here is another example:
 
    #+BEGIN_SRC haskell
@@ -944,9 +991,9 @@
    seq :: a -> b -> b
    #+END_SRC
 
-   If you look at the type signature you may think that it's exactly the same as the ~const~ function, however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l ...~ to force Haskell to finish reading the list. This would just force it to reading the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l) ...~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
+   If you look at the type signature you may think that it's exactly the same as the ~const~ function, however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l~ to force Haskell to finish reading the list. This would just force it to read the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l)~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
 
-   Here is a standard use case of ~seq~ that every Haskell programmer should know - strict left fold. Here is how ~foldl~ is defined in Prelude (Haskell's standard library):
+   Here is a standard use case of ~seq~ that every Haskell programmer should know - strict left fold. Here is how ~foldl~ is defined in Prelude:
 
    #+BEGIN_SRC haskell
    foldl :: (a -> b -> a) -> a -> [b] -> a
@@ -962,8 +1009,12 @@
    => foldl (+) (0 + 1) [2..100]
    => foldl (+) (0 + 1) (2:[3..100])
    => foldl (+) ((0 + 1) + 2) [3..100]
+   => foldl (+) ((0 + 1) + 2) (3:[4..100])
+   => foldl (+) (((0 + 1) + 2) + 3) [4..100]
    ...
    #+END_SRC
+
+(Reference: How lazy evaluation works in Haskell) ((i'll do the references later))
 
 * Algebraic data types vs classes
 * Dynamic types vs static types
