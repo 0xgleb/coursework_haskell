@@ -401,16 +401,336 @@
    #+BEGIN_SRC haskell
    foldl :: (a -> b -> a) -> a -> [b] -> a
    foldl op prev []     = prev
-   foldl op prev (x:xs) = foldl op (op `prev` x) xs
+   foldl op prev (x:xs) = foldl op (prev `op` x) xs
    #+END_SRC
 
-** Making types
+   So let's use it for our problem.
+
+   #+BEGIN_SRC haskell
+   evenSum :: Integral a => [a] -> a
+   evenSum = foldl (+) 0 . filter even
+   #+END_SRC
+
+** Making your own types
+
+*** type
+
+    ~type TypeName = AnotherType~ just makes a type synonym of ~String~.
+
+    #+BEGIN_SRC haskell
+    type Name = String
+    #+END_SRC
+
+    ~Name~ and ~String~ are two identical types. This is useful for making type declarations more meaningful.
+
+*** data
+
+    ~data NewDataType = TypeConstructor AnotherType~ is how we make a new simple type. This code makes a type constructor which is a special function that allows us to create instances of the ~NewDataType~. We don't need to write an implementation for this function, we get it by declaring the new type.
+
+    #+BEGIN_SRC haskell
+    TypeConstructor :: AnotherType -> NewDataType
+    #+END_SRC
+
+    Now ~AnotherType~ and ~NewDataType~ are two different types even though they represent the same data. This means that if we have a function that takes an argument of type ~AnotherType~ then it won't compile if we pass it something of type ~NewDataType~. To extract data we can use pattern matching on type constructors.
+
+    #+BEGIN_SRC haskell
+    toOriginalType :: NewDataType -> AnotherType
+    toOriginalType (TypeConstructor thing) = thing
+    #+END_SRC
+
+    Constructors don't have to have one argument, they can have multiple or none at all. We can use the name of the type as the constructor name, which what people usually do if they have only one constructor.
+
+    #+BEGIN_SRC haskell
+    data Thing = Thing
+
+    data StringPair = StringPair String String
+    #+END_SRC
+
+    We can have types with multiple constructors.
+
+    #+BEGIN_SRC haskell
+    data MaybeString = JustString String | NoString
+    #+END_SRC
+
+    This code creates a new type ~MaybeString~ with two constructors: ~JustString~ and ~NoString~. We can do pattern matching on both of the constructors.
+
+    #+BEGIN_SRC haskell
+    hasString :: MaybeString -> Bool
+    hasString (JustString _) = True
+    hasString NoString       = False
+    #+END_SRC
+
+    In pattern matching we can replace a variable with an underscore if we don't use that variable.
+
+    #+BEGIN_SRC haskell
+    data Person = Person String Int
+
+    name :: Person -> String
+    name (Person str _) = str
+
+    age :: Person -> String
+    age (Person _ n) = n
+    #+END_SRC
+
+    Instead of writing functions ~name~ and ~age~ we can use fields and the compiler will generate them.
+
+    #+BEGIN_SRC haskell
+    data Person = Person { name :: String
+                         , age  :: Int
+                         }
+    #+END_SRC
+
+    This gives us the same ~name~ and ~age~ functions.
+
 ** Recursive types
+
+*** Lists
+
+    List is a common example of a recursive type. Here is how we can define the list type:
+
+    #+BEGIN_SRC haskell
+    data List a = Empty | Cons a (List a)
+    #+END_SRC
+
+    Type ~List~ takes another type as an argument. We can see two constructors, here are their types:
+
+    #+BEGIN_SRC haskell
+    Empty :: List a
+    Const :: a -> List a -> List a
+    #+END_SRC
+
+    Haskell allows the use of special characters in names, this gives us the definition of lists from the standard library:
+
+    #+BEGIN_SRC haskell
+    data [] a = [] | a : [a]
+    #+END_SRC
+
+    If we tried to print our new list it wouldn't work, because we don't have a conversion to string defined for it. Haskell has a function ~show :: Show a => a -> String~ which is defined in the type class ~Show~. So we can make our ~List~ an instance of ~Show~. However, for predefined type classes, we can use a simpler approach. We can just derive that instance.
+
+    #+BEGIN_SRC haskell
+    data List a = Empty | Cons a (List a)
+        deriving (Show)
+    #+END_SRC
+
+    We can also derive type class instances for ~Read~ (parsing strings), ~Eq~ (checking for equality), ~Ord~ (ordering), etc. This way we can get a lot of functions for free.
+
+    #+BEGIN_SRC haskell
+    data List a = Empty | Cons a (List a)
+        deriving (Show, Read, Eq, Ord)
+    #+END_SRC
+
+*** Trees
+
+    Here is another example of a recursive data type - binary trees.
+
+    #+BEGIN_SRC haskell
+    data BinTree a = Empty
+                   | Node a (BinTree a) (BinTree a)
+                   deriving (Show)
+    #+END_SRC
+
+    Because we used an arbitrary type variable ~a~ in the type declaration we can make a lot of different trees. For example we can make trees of trees.
+
 ** Infinite structures
+
+   Haskell uses lazy evaluation, which is why we can have infinite data structures. For example in Haskell we can do this:
+
+   #+BEGIN_SRC haskell
+   numbers :: [Integer]
+   numbers = 1 : map (+1) numbers
+
+   main = print $ take 3 numbers
+   #+END_SRC
+
+   The function ~take~ takes the first ~n~ numbers of the given list. If we run this code it won't get stuck, it will print `[1,2,3]`. Because of lazy evalutaion Haskell doesn't calculate all the numbers in the list, but only the ones that it needs.
+
+   In this example we just have all positive integers. Let's take a look at a more interesting example with a tree.
+
+   #+BEGIN_SRC haskell
+   tree :: BinTree Integer
+   tree = Node 0 (dec tree) (inc tree)
+       where dec (Node x l r) = Node (x-1) (dec l) (dec r)
+             inc (Node x l r) = Node (x+1) (inc l) (inc r)
+   #+END_SRC
+
+   #+BEGIN_SRC
+           |(-2)..
+     |(-1)-|
+     |     |( 0)..
+   0-|
+     |     |( 0)..
+     |( 1)-|
+           |( 2)..
+   #+END_SRC
+
+(Reference: Learn Haskell Fast and Hard) ((i'll do all the references later))
+
 ** Functors
+
+   Functor is one of the most important abstractions in Haskell. Basically, it is a type class generalises the ~map~ function.
+
+   #+BEGIN_SRC haskell
+   class Functor f where
+       fmap :: (a -> b) -> f a -> f b
+   #+END_SRC
+
+   The notion of functors comes from maths, and there are laws for it. Unfortunately GHC doesn't support laws in type classes, so it's the programmers work to make sure they work. The relevant to Haskell law is that if we have two functions: ~h :: a -> b~ and ~f :: b -> c~ then for any functor ~fmap (f . h)~ should be the same as ~fmap f . fmap h~. ~<$>~ is a infix operator for ~fmap~.
+
+   #+BEGIN_SRC haskell
+   f <$> x = fmap f x
+   #+END_SRC
+
+   Here are some examples of functors:
+   
+   #+BEGIN_SRC haskell
+   data Maybe a = Just a | Nothing
+
+   instance Functor Maybe where
+       fmap f (Just x) = Just $ f x
+       fmap _ Nothing  = Nothing
+
+   maybeFive :: Maybe Int
+   maybeFive = Just 5
+
+   maybeSix :: Maybe Int
+   maybeSix = fmap (+1) maybeFive -- = Just 6
+
+   data [] a = [] | a : [a]
+
+   instance Functor [] where
+       fmap f (x:xs) = f x : fmap f xs
+       fmap _ []     = []
+       -- fmap = map
+   
+   data Either a b = Left a | Right b
+
+   instance Functor (Either a) where
+       fmap f (Right x) = Right $ f x
+       fmap _ (Left x)  = Left x
+
+   numberOrString :: Either Int String
+   numberOrString = Right "World"
+
+   numberOrHello :: Either Int String
+   numberOrHello = ("Hello " ++) <$> numberOrString -- Right "Hello World"
+
+   numOrStr :: Either Int String
+   numOrStr = Left 5
+
+   numOrHello :: Either Int String
+   numOrHello = ("Hello " ++) <$> numOrHello -- Left 5
+
+   data (,) a b = (,) a b
+   
+   instance Functor ((,) a) where
+       fmap f (x, y) = (x, f y)
+   
+   pairOfNumbers :: (Int, Int)
+   pairOfNumbers = (2, 3)
+   
+   incrementedPair :: (Int, Int)
+   incrementedPair = fmap (+1) pairOfNumbers -- = (2, 4)
+   #+END_SRC
+
 ** Applicative functors
+
+   As you know ~Maybe~ is a functor. Here is why we can do this:
+
+   #+BEGIN_SRC haskell
+   Prelude> negate <$> Just 2
+   Just (-2)
+   #+END_SRC
+
+   But what if we want to add two ~Maybe~ numbers.
+
+   #+BEGIN_SRC haskell
+   Prelude> :t (+) <$> Just 2
+   (+) <$> Just 2 :: Num a => Maybe (a -> a)
+   #+END_SRC
+
+   After we partially apply addition using ~fmap~ we get a function inside a functor. How to apply that function to our second ~Maybe~ number? Use applicative functors.
+
+   #+BEGIN_SRC haskell
+   class Functor f => Applicative f where
+       pure :: a -> f a
+       <*>  :: f (a -> b) -> f a -> f b
+   #+END_SRC
+   
+   ~Maybe~ is an applicative functor, hence we can do this:
+
+   #+BEGIN_SRC haskell
+   Prelude> (+) <$> Just 2 <*> Just 3
+   Just 5
+   #+END_SRC
+
+   Applicative functors also have laws:
+
+   #+BEGIN_SRC haskell
+   pure id <*> v              = v                -- identity
+   pure f  <*> pure x         = pure (f x)       -- homomorphism
+   u       <*> pure y         = pure ($ y) <*> u -- interchange
+   pure (.) <*> u <*> b <*> w = u <*> (v <*> w)  -- composition
+   #+END_SRC
+
+   Here are some examples of applicative functors:
+
+   #+BEGIN_SRC haskell
+   data Maybe a = Just a | Nothing
+   
+   instance Applicative Maybe where
+       pure = Just
+       (Just f) <*> (Just x) = Just $ f x
+       _        <*> _        = Nothing
+   
+   data [] a = [] | a : [a]
+   
+   instance Applicative [] where
+       pure x = [x]
+       (f:fs) <*> l  = (f <$> l) ++ (fs <*> l)
+       []     <*> _  = []
+       _      <*> [] = []
+   -- applied every function to every element of the list
+   
+   data Reader r a = Reader { runReader :: r -> a }
+   
+   instance Applicative (Reader r) where
+       pure g = Reader $ const g -- const :: a -> b -> a
+       f <*> g = Reader $ \r -> runReader f r $ runReader g r
+   #+END_SRC
+
 ** Monads
+
+   #+BEGIN_SRC haskell
+   headMay :: [a] -> Maybe a
+   headMay []    = Nothing
+   headMay (x:_) = Just x
+   #+END_SRC
+
+   Assume we have a list of lists and we want to safely get the first element of the first list. We can't use ~head~ as it will crash if you call it with an empty list, so we need to apply headMay twice. We can try using ~fmap headMay . headMay~, but then we'll get this:
+
+   #+BEGIN_SRC haskell
+   Prelude> :t fmap headMay . headMay
+   fmap headMay . headMay :: [[a]] -> Maybe (Maybe a)
+   #+END_SRC
+
+   We want to reduce ~Maybe (Maybe a)~ to just ~Maybe a~.
+
+   Another example is if we want to convert a list of lists into a single list.
+
+   Both of these problems can be solved using monads. Here are some definitions:
+
+   #+BEGIN_SRC haskell
+   class Applicative m => Monad m where
+       (>>=) :: m a -> (a -> m b) -> m b
+
+   x >>= f = join $ f <$> x
+
+   join :: Monad m => m (m a) -> m a
+   join x = 
+   #+END_SRC
+
 ** IO
+
 
 * Procedural, object orientied, and functional programming.
 ** Imperative and declarative programming
