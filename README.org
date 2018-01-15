@@ -1001,7 +1001,7 @@
    foldl f a (x:xs) = foldl f (f a x) xs
    #+END_SRC
 
-   Say we want to sum all numbers from 1 to 100 (~[1..100]~). For that we would use the expression ~foldl (+) 0 [1..100]~. Here is how the evaluation process would look in that case:
+   Say we want to sum all integers from 1 to 100 (~[1..100]~). For that we would use the expression ~foldl (+) 0 [1..100]~. Here is how the evaluation process would look in that case:
 
    #+BEGIN_SRC haskell
    foldl (+) 0 [1..100]
@@ -1014,10 +1014,59 @@
    ...
    #+END_SRC
 
+   As you can see the second argument accumulates a massive expression without reducing it, this causes high memory usage. To deal with this problem we need to keep the accumulator in WHNF. Here is how we can do this:
+
+   #+BEGIN_SRC haskell
+   foldl' :: (a -> b -> a) -> a -> [b] -> a
+   foldl' f a []     = a
+   foldl' f a (x:xs) = seq a' $ foldl' f a' xs
+       where a' = f a x
+   #+END_SRC
+
+   This function is defined in the module ~Data.List~. Now evaluation will look like this:
+
+   #+BEGIN_SRC haskell
+   foldl' (+) 0 [1..100]
+   => foldl' (+) 0 (1:[2..100])
+   => foldl' (+) 1 [2..100]
+   => foldl' (+) 1 (2:[3..100])
+   => foldl' (+) 3 [3..100]
+   => foldl' (+) 3 (3:[4..100])
+   => foldl' (+) 6 [4..100]
+   ...
+   #+END_SRC
+   
+   During evaluation the expression has constant memory usage.
+   
+   In a language with eager evaluation, like Python, it's impossible to write this function. In such languge the list gets reduced to normal form before summing. This uses the same amount of memory as the inefficient version of ~foldl~.
+
+   Let's take a look at how we can define ~[n..m]~.
+
+   #+BEGIN_SRC haskell
+   enumFromTo n m = if n < m then n : enumFromTo (n+1) m
+                             else []
+   #+END_SRC
+
+   So the reduction of ~[1..100]~ to WHNF actually looks like this:
+
+   #+BEGIN_SRC haskell
+   [1..100]
+   => 1:[(1+1)..100]
+   #+END_SRC
+
+   So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how excatly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
+
+*** Haskell and Python.
+
+    Python, as I mentioned before, uses eager evaluation. The benefit of this is that it's much easier to predict performance. It's also easier to debug it if something takes too much time or too much space for evaluation. The benefit of lazy evaluation, which Haskell uses, is that often it improves performance. At the same time it allows us to control how expressions will be evaluated. It also allows us to use infinite structures and avoid some exceptions. GHC can do laziness optimisation, which reduces the number of computations.
+
 (Reference: How lazy evaluation works in Haskell) ((i'll do the references later))
 
 * Algebraic data types vs classes
 * Dynamic types vs static types
+
+  Both Python and Haskell have strong type system, which means that they don't allow implicit type casting. However, Python uses dynamic typing and Haskell uses static types. GHC figures out types of all expressions at the compile time. Python expressions don't have types, but they refer to objects who have types. The types get inferred at run time.
+
 * Non-pure functions in Haskell and Python
 * Debugging
 * Fields vs lens
