@@ -1062,13 +1062,64 @@
 
 (Reference: How lazy evaluation works in Haskell) ((i'll do the references later))
 
-* Algebraic data types vs classes
-* Dynamic types vs static types
+* Type systems comparison
 
   Both Python and Haskell have strong type system, which means that they don't allow implicit type casting. However, Python uses dynamic typing and Haskell uses static types. GHC figures out types of all expressions at the compile time. Python expressions don't have types, but they refer to objects who have types. The types get inferred at run time.
 
+  Nobody likes writing documentation, and Haskell can help with that. First of all, by defining the type of a function you restrict possible ways of implementing it. Here are some examples of functions that can be implemented only one way:
+
+  #+BEGIN_SRC haskell
+  id :: a -> a
+  const :: a -> b -> a
+  fst :: (a, b) -> a
+  #+END_SRC
+
+  Let's take a look at the first example - ~id~. The only way we can implement a function that takes an argument of any type and returns something of the same type is to return the argument. As it's an absolutely arbitrary type we can't use any type specific operations on that. If we have a variable that can be of any type then we can't create another value of that type from it because we don't know what the type is. So by restricting possible implementations we can write less documentation.
+
+  Also we can use type synonyms and reasonable type variable names, for example ~user_id~ instead of ~a~ or ~UserId~ instead of ~Int~. Just by doing that we give more context, and hence decrease the amount of documentation we need.
+
+  Haskell doesn't have side effects, therefore you don't need to write anything in the documentation about functions' side effects. For pure parts of programs all you need to document is function arguments and what it returns. And we can reduce the amount of documentation for arguments using type synonyms and reasonable type variable names, and we can reduce the amount of documentation for output by making the code as arbitrary as possible, restricting the possible ways of implementing it.
+
 * Non-pure functions in Haskell and Python
-* Debugging
+
+  In Haskell parts of the program that have side effects have special types, they use the IO monad. This allows us to see just from the type definition whether the function has side effects or not. In Python any function can have side effects, and without looking at the implementation or the documentation of a function we can't say if it has side effects or not. Haskell also supports unsafe IO actions, which allow us to execute IO computations at any time. This is, however, not recommended.
+
+  When you are debugging a program in Python you put a lot of ~print~ statements in order to check variable states. Printing something to console is of course an IO action. In Haskell for debugging we can use special functions from debugging modules. They allow you to trace execution and print logs.
+
+* Debugging and refactoring
+
+  In Python you can write this:
+
+  #+BEGIN_SRC python
+  def main():
+      print(1 + "1")
+
+  if __name__ == "__main__":
+      main()
+  #+END_SRC
+
+  This code is always incorrect and it will never work, but Python doesn't check that before running, which is why you find all the problems of your code at runtime. Even if you use non-standard tools for inspecting Python code, such as pyflakes or pyling, they won't tell you that the code is invalid at compile time. Haskell has a completely different situation, it has a very good type system and it's purely functional, which is the reason why the compiler can find almost all errors at compile time.
+
+  Refactoring Haskell code is generally easier, because the compiler shows the majority of the errors. In Python, as you can have mutable variables, you can modify a state of a variable and forget about it when you are refactoring. This will result in an unexpected state change, which can cause the entire program to crash. GHC insures that all the types match, which eliminates lots of errors when debugging. Even something simple as changing a name of a variable is much easier to do in Haskell than in Python. After you change a variable's name in Haskell the compiler will give you errors for every line of code that uses an undefined variable.
+
 * Fields vs lens
+
+** Problematic Haskell fields
+
+  Both in Haskell and Python we can have structures/objects with fields. Let's take a look at how we can work with them. If we just want to access the data stored in a field we can easily do it in both Haskell and Python. The problem comes when we want to modify a field. In Haskell fields are just functions, but how do we update it?
+
+  #+BEGIN_SRC haskell
+  data User = User { name :: String
+                   , age  :: Int
+                   }
+
+  birthdayUpdate :: User -> User
+  birthdayUpdate usr = User (name usr) (age usr + 1)
+  #+END_SRC
+
+  As you can see we need to rewrite all the fields even if just one to change one of them. This is one of the problems with Haskell. To address this issue Haskell has a library called lens. They give us all the normal functionality of records and even more than that.
+
+** Lens
+
 * Concurrency
 * Use cases
