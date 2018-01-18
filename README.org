@@ -1108,18 +1108,75 @@
 
   Both in Haskell and Python we can have structures/objects with fields. Let's take a look at how we can work with them. If we just want to access the data stored in a field we can easily do it in both Haskell and Python. The problem comes when we want to modify a field. In Haskell fields are just functions, but how do we update it?
 
-  #+BEGIN_SRC haskell
-  data User = User { name :: String
-                   , age  :: Int
-                   }
+  We need to rewrite all the fields even if just want to change one of them. This is one of the problems with Haskell. To address this issue Haskell has a library called lens. It provides us with all the normal functionality of records and even more than that.
 
-  birthdayUpdate :: User -> User
-  birthdayUpdate usr = User (name usr) (age usr + 1)
-  #+END_SRC
+   In Python to change a field we can do this:
 
-  As you can see we need to rewrite all the fields even if just one to change one of them. This is one of the problems with Haskell. To address this issue Haskell has a library called lens. They give us all the normal functionality of records and even more than that.
+   #+BEGIN_SRC python
+   project.owner.name = "John"
+   #+END_SRC
+
+   Here is how we can do this in Haskell:
+
+   #+BEGIN_SRC haskell
+   data User = User { name :: String
+                    , age  :: Int
+                    } deriving Show
+   data Project = Project { owner :: User } deriving Show
+
+   setOwnerName :: String -> Project -> Project
+   setOwnerName newName project = project { owner = (owner project) { name = newName } }
+   #+END_SRC
+
+   As you can see this solution isn't great. We assign the name by assigning the owner using record syntax.
 
 ** Lens
+
+   To improve the situation we can use lens. Essentially lens are getters and setters. So here is how we might implement them:
+
+   #+BEGIN_SRC haskell
+   data NaiveLens s a = NaiveLens { view :: s -> a
+                                  , set  :: a -> s -> s
+                                  }
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   nameLens :: NaiveLens User String
+   nameLens = NaiveLens name $ \a s -> s { name = a }
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   Prelude> let john = User { name = "John", age = 30 }
+   Prelude> set nameLens "Bob" john
+   User {name = "Bob", age = 30}
+   #+END_SRC
+
+   The problem with this approach is that if we want to apply a function to the record then we first need to ~view~ it, then apply the function, and then ~set~ the record again. And things get even worse if we have a massive data type with lots of subrecords. We can solve that by adding another field to the ~NaiveLens~ structure.
+
+   #+BEGIN_SRC haskell
+   data NaiveLens s a = NaiveLens { view :: s -> a
+                                  , set  :: a -> s -> s
+                                  , over :: (a -> a) -> s -> s
+                                  }
+
+   ageLens :: NaiveLens User Int
+   ageLens = NaiveLens age
+                       (\a s -> s { age = a })
+                       (\f s -> s { age = f (age s) })
+   #+END_SRC
+
+   #+BEGIN_SRC haskell
+   Prelude> let john = User { name = "John", age = 30 }
+   Prelude> over ageLens (+1) john
+   User {name = "John", age = 31}
+   #+END_SRC
+
+   But now we have to provide a getter and two setters even if we don't need them. However  we can remove set using over.
+
+   #+BEGIN_SRC haskell
+   set :: NaiveLens s a -> a -> s -> s
+   set lens a s = over lens (const a) s
+   #+END_SRC
 
 * Concurrency
 * Use cases
