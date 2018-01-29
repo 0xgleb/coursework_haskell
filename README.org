@@ -1,21 +1,36 @@
-* Introduction
+* Analysis
+** Objectives
+*** Expressiveness
 
-  The purpose of this paper is to compare two popular languages and the programming paradigms that they use. Haskell is one of the most popular functional programming languages and one of the most "functional" in the sense that it doesn't support imperative programming or OOP. Python is one of the most popular languages and almost every programmer knows it. Python is very different from Haskell, so we can compare lots of different aspects and different paradigms. Python is one year younger than Haskell and some of it's features were influenced by Haskell, so I will discuss both differences and similarities of the languages.
+    We want to write the least amount of code possible to solve our problem. At the same time we want code to be readable and elegant. As I mentioned above the development speed is very important and it reduces if we can quickly express ideas without writing much code.
 
-  Here are some facts about Python and Haskell.
+*** Safety
 
-  |---------------------+------------------------------+----------------------------------------------------------------------|
-  |                     | Haskell                      | Python                                                               |
-  |---------------------+------------------------------+----------------------------------------------------------------------|
-  | Paradigms           | Functional                   | OOP, imperative, procedural. Has elements of functional programming. |
-  | Evaluation strategy | Lazy/non-strict              | Strict                                                               |
-  | Type system         | Static, strong inferred      | Dynamic, strong, duck.                                               |
-  | Execution (default) | Compiled or intepreted (GHC) | Interpreted (CPython)                                                |
-  |---------------------+------------------------------+----------------------------------------------------------------------|
+    Usually programmers spend a lot of time finding and fixing bugs, which is a huge problem because for businesses it's crucial to deliver code as fast as possible. But what's an even bigger problem is programs crashing in production. This can cause businesses to lose a lot money or, in the worst cases, shut down. So we want programming languages to prevent as many bugs as possible.
 
-* Basics of Haskell
+*** High level abstractions
 
-  Most programmers know Python to some extend, however very few people know Haskell. This is why I'm going to start this comparison with a tutorial on Haskell.
+    To write programs as fast as possible we want to describe our ideas without thinking about every single operation that happens inside the computer.
+
+*** Modularity
+
+    We want to reuse as much code as possible. We also should be able to easily compose different parts of a program together.
+
+*** Performance
+
+    Depending on what we are developing we have different performance requirements, so we want programming languages to help us make efficien programs.
+
+*** Easy refactoring
+
+    In real world projects it's impossible to write a piece of code once and then never change it. We want to be able to change existing code and to add new features without breaking anything.
+
+*** Concurrency
+
+    We want to be able to write safe concurrent applications with the language.
+
+* Design
+
+  Let's first take a look at how Haskell works and then I'll show how it's design can be used to solve the identified above problems.
 
 ** Hello World and more.
 
@@ -851,23 +866,13 @@
                       headMay h
     #+END_SRC
 
-* Procedural, object orientied, and functional programming.
-** Imperative and declarative programming
-   *Imperative programming* is a programming paradigm that uses statements that change a program's state. These programs consist of instruction sequences.
-
-   *Declarative programming* is a programming paradigm that expresses the logic of a computation without describing the order of instructions. It tries to describe what needs to be accomplished instead of describing how to accomplish it.
-
-   So the difference between imperative programming and declarative programming is that declarative programming doesn't specify the order of instructions.
-
-** Polymorphism
-* Haskell vs functional elements of Python
-* Strict and lazy/non-strict evaluation
+** Lazy evaluation
 
   Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this funciton ~foldl'~ from the ~Data.List~ module and use it instead, everything's ok.
 
-** How lazy evaluation in Haskell works?
+*** How lazy evaluation in Haskell works?
 
-*** Graph reduction
+**** Graph reduction
 
     Haskell programs are executed by evaluating expressions. The primary idea is function application. Here is a simple function:
 
@@ -903,7 +908,7 @@
 
     At every step the highlighted rectangle gets updated.
 
-*** Normal form
+**** Normal form
 
     If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
 
@@ -929,7 +934,7 @@
 
     The list ~ones~ is also in WHNF, its top node is a constructor. In Haskell we can create and use infinite lists.
 
-** Execution order, lazy evaluation
+*** Execution order, lazy evaluation
 
    Often expressions have multiple redexes. Does the order at which we reduce them matter?
 
@@ -957,7 +962,7 @@
 
    Both of the arguments are redexes. Because of pattern matching the first argument will get evaluated. Then the graph will get reduced without evaluating the second argument.
    
-** Performance
+*** Performance
 
    It's mathematically proved that lazy evaluation requires fewer or the same number of reductions (calculations) as eager evaluation. Also, in some cases, it can compute expressions with errors without crashing, such as
 
@@ -991,7 +996,7 @@
    seq :: a -> b -> b
    #+END_SRC
 
-   If you look at the type signature you may think that it's exactly the same as the ~const~ function, however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l~ to force Haskell to finish reading the list. This would just force it to read the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l)~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
+   If you look at the type signature you may think that it's exactly the same as the ~const~ function (with arguments in a different order), however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l~ to force Haskell to finish reading the list. This would just force it to read the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l)~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
 
    Here is a standard use case of ~seq~ that every Haskell programmer should know - strict left fold. Here is how ~foldl~ is defined in Prelude:
 
@@ -1056,127 +1061,18 @@
 
    So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how excatly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
 
-*** Haskell and Python.
-
-    Python, as I mentioned before, uses eager evaluation. The benefit of this is that it's much easier to predict performance. It's also easier to debug it if something takes too much time or too much space for evaluation. The benefit of lazy evaluation, which Haskell uses, is that often it improves performance. At the same time it allows us to control how expressions will be evaluated. It also allows us to use infinite structures and avoid some exceptions. GHC can do laziness optimisation, which reduces the number of computations.
-
 (Reference: How lazy evaluation works in Haskell) ((i'll do the references later))
 
-* Type systems comparison
+* Solution
 
-  Both Python and Haskell have strong type system, which means that they don't allow implicit type casting. However, Python uses dynamic typing and Haskell uses static types. GHC figures out types of all expressions at the compile time. Python expressions don't have types, but they refer to objects who have types. The types get inferred at run time.
+** Expressiveness
+** Safety
+** High level abstractions
+** Modularity
+** Performance
+** Easy refactoring
+** Concurrency
 
-  Nobody likes writing documentation, and Haskell can help with that. First of all, by defining the type of a function you restrict possible ways of implementing it. Here are some examples of functions that can be implemented only one way:
-
-  #+BEGIN_SRC haskell
-  id :: a -> a
-  const :: a -> b -> a
-  fst :: (a, b) -> a
-  #+END_SRC
-
-  Let's take a look at the first example - ~id~. The only way we can implement a function that takes an argument of any type and returns something of the same type is to return the argument. As it's an absolutely arbitrary type we can't use any type specific operations on that. If we have a variable that can be of any type then we can't create another value of that type from it because we don't know what the type is. So by restricting possible implementations we can write less documentation.
-
-  Also we can use type synonyms and reasonable type variable names, for example ~user_id~ instead of ~a~ or ~UserId~ instead of ~Int~. Just by doing that we give more context, and hence decrease the amount of documentation we need.
-
-  Haskell doesn't have side effects, therefore you don't need to write anything in the documentation about functions' side effects. For pure parts of programs all you need to document is function arguments and what it returns. And we can reduce the amount of documentation for arguments using type synonyms and reasonable type variable names, and we can reduce the amount of documentation for output by making the code as arbitrary as possible, restricting the possible ways of implementing it.
-
-* Non-pure functions in Haskell and Python
-
-  In Haskell parts of the program that have side effects have special types, they use the IO monad. This allows us to see just from the type definition whether the function has side effects or not. In Python any function can have side effects, and without looking at the implementation or the documentation of a function we can't say if it has side effects or not. Haskell also supports unsafe IO actions, which allow us to execute IO computations at any time. This is, however, not recommended.
-
-  When you are debugging a program in Python you put a lot of ~print~ statements in order to check variable states. Printing something to console is of course an IO action. In Haskell for debugging we can use special functions from debugging modules. They allow you to trace execution and print logs.
-
-* Debugging and refactoring
-
-  In Python you can write this:
-
-  #+BEGIN_SRC python
-  def main():
-      print(1 + "1")
-
-  if __name__ == "__main__":
-      main()
-  #+END_SRC
-
-  This code is always incorrect and it will never work, but Python doesn't check that before running, which is why you find all the problems of your code at runtime. Even if you use non-standard tools for inspecting Python code, such as pyflakes or pyling, they won't tell you that the code is invalid at compile time. Haskell has a completely different situation, it has a very good type system and it's purely functional, which is the reason why the compiler can find almost all errors at compile time.
-
-  Refactoring Haskell code is generally easier, because the compiler shows the majority of the errors. In Python, as you can have mutable variables, you can modify a state of a variable and forget about it when you are refactoring. This will result in an unexpected state change, which can cause the entire program to crash. GHC insures that all the types match, which eliminates lots of errors when debugging. Even something simple as changing a name of a variable is much easier to do in Haskell than in Python. After you change a variable's name in Haskell the compiler will give you errors for every line of code that uses an undefined variable.
-
-* Fields vs lens
-
-** Problematic Haskell fields
-
-  Both in Haskell and Python we can have structures/objects with fields. Let's take a look at how we can work with them. If we just want to access the data stored in a field we can easily do it in both Haskell and Python. The problem comes when we want to modify a field. In Haskell fields are just functions, but how do we update it?
-
-  We need to rewrite all the fields even if just want to change one of them. This is one of the problems with Haskell. To address this issue Haskell has a library called lens. It provides us with all the normal functionality of records and even more than that.
-
-   In Python to change a field we can do this:
-
-   #+BEGIN_SRC python
-   project.owner.name = "John"
-   #+END_SRC
-
-   Here is how we can do this in Haskell:
-
-   #+BEGIN_SRC haskell
-   data User = User { name :: String
-                    , age  :: Int
-                    } deriving Show
-   data Project = Project { owner :: User } deriving Show
-
-   setOwnerName :: String -> Project -> Project
-   setOwnerName newName project = project { owner = (owner project) { name = newName } }
-   #+END_SRC
-
-   As you can see this solution isn't great. We assign the name by assigning the owner using record syntax.
-
-** Lens
-
-   To improve the situation we can use lens. Essentially lens are getters and setters. So here is how we might implement them:
-
-   #+BEGIN_SRC haskell
-   data NaiveLens s a = NaiveLens { view :: s -> a
-                                  , set  :: a -> s -> s
-                                  }
-   #+END_SRC
-
-   #+BEGIN_SRC haskell
-   nameLens :: NaiveLens User String
-   nameLens = NaiveLens name $ \a s -> s { name = a }
-   #+END_SRC
-
-   #+BEGIN_SRC haskell
-   Prelude> let john = User { name = "John", age = 30 }
-   Prelude> set nameLens "Bob" john
-   User {name = "Bob", age = 30}
-   #+END_SRC
-
-   The problem with this approach is that if we want to apply a function to the record then we first need to ~view~ it, then apply the function, and then ~set~ the record again. And things get even worse if we have a massive data type with lots of subrecords. We can solve that by adding another field to the ~NaiveLens~ structure.
-
-   #+BEGIN_SRC haskell
-   data NaiveLens s a = NaiveLens { view :: s -> a
-                                  , set  :: a -> s -> s
-                                  , over :: (a -> a) -> s -> s
-                                  }
-
-   ageLens :: NaiveLens User Int
-   ageLens = NaiveLens age
-                       (\a s -> s { age = a })
-                       (\f s -> s { age = f (age s) })
-   #+END_SRC
-
-   #+BEGIN_SRC haskell
-   Prelude> let john = User { name = "John", age = 30 }
-   Prelude> over ageLens (+1) john
-   User {name = "John", age = 31}
-   #+END_SRC
-
-   But now we have to provide a getter and two setters even if we don't need them. However  we can remove set using over.
-
-   #+BEGIN_SRC haskell
-   set :: NaiveLens s a -> a -> s -> s
-   set lens a s = over lens (const a) s
-   #+END_SRC
-
-* Concurrency
-* Use cases
+* Links
+  [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
+  [[https://en.wikipedia.org/wiki/Church–Rosser_theorem]]
