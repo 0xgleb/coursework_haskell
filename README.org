@@ -1,30 +1,43 @@
 * Analysis
-** Objectives
-*** Expressiveness
+
+  When we pick a programming language for a project we want it to have several features that will make the proccess of building the project faster and easier. In this investigation project I will identify the most important features that a general purpose high-level programming language should have and show how Haskell implements them. First, let's identify the main features that make high-level programming languages different from the low-level ones.
+
+** Expressiveness
 
     We want to write the least amount of code possible to solve our problem. At the same time we want code to be readable and elegant. As I mentioned above the development speed is very important and it reduces if we can quickly express ideas without writing much code.
 
-*** Safety
+    To solve this problem most languages just create special syntax for common things. This can help, but this approach has a big problem - it clutters up the language a lot.
+
+** Safety
 
     Usually programmers spend a lot of time finding and fixing bugs, which is a huge problem because for businesses it's crucial to deliver code as fast as possible. But what's an even bigger problem is programs crashing in production. This can cause businesses to lose a lot money or, in the worst cases, shut down. So we want programming languages to prevent as many bugs as possible.
 
-*** High level abstractions
+    A lot of the runtime issues happen because of state changes. In most languages variables are mutable and functions can have side effects, that means that we can accidently change a global variable and cause the entire program to crash.
+
+    Here are some examples of methods that we can use to solve this problem: type systems, automated tests, code checkers. Let's take a look at every one of these approaches. Not all languages have type systems, but even the ones that do usually allow dangerous actions like implicit casting. Automated tests are great and they help a lot. But it's hard to test every single thing, especially if the part of the code that you are testing depends on the state. Non-standard code checkers in theory can help, but often they can't find even simple errors that must occur at runtime.
+
+** High level abstractions
 
     To write programs as fast as possible we want to describe our ideas without thinking about every single operation that happens inside the computer.
 
-*** Modularity
+    There are two areas that are fundamental in programming - resource management and sequencing. Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main principle of imperative programming is that it allows programmers to write a sequence of intstructions that computer will execute. The only thing imperative languages do is to introduce new keywords and libraries, thus cluttering the language.
+
+
+** Modularity
 
     We want to reuse as much code as possible. We also should be able to easily compose different parts of a program together.
 
-*** Performance
+** Performance
 
     Depending on what we are developing we have different performance requirements, so we want programming languages to help us make efficien programs.
 
-*** Easy refactoring
+** Easy refactoring
 
     In real world projects it's impossible to write a piece of code once and then never change it. We want to be able to change existing code and to add new features without breaking anything.
 
-*** Concurrency
+    Automated tests can help a lot with this problem too, but they have mentioned above problems.
+
+** Concurrency
 
     We want to be able to write safe concurrent applications with the language.
 
@@ -1076,3 +1089,4 @@
 * Links
   [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
   [[https://en.wikipedia.org/wiki/Church–Rosser_theorem]]
+  [[https://wiki.haskell.org/Why_Haskell_matters]]
