@@ -2,15 +2,15 @@
 
 * Analysis
 
-When we pick a programming language for a project we want it to have several features that will make the proccess of building the project faster and easier. In this investigation project I will identify the most important features that a general purpose high-level programming language should have and show how Haskell implements them. First, let's identify the main features that make high-level programming languages different from the low-level ones.
+When we pick a programming language for a project we want it to have several features that will make the process of building the project faster and easier. In this investigation project I will identify the most important features that a general purpose high-level programming language should have and show how Haskell implements them. First, let's identify the main features that make high-level programming languages different from the low-level ones.
 
 ** Safety
 
 Usually programmers spend a lot of time finding and fixing bugs, which is a huge problem because for businesses it's crucial to deliver code as fast as possible. But what's an even bigger problem is programs crashing in production. This can cause businesses to lose a lot money or, in the worst cases, shut down. So we want programming languages to prevent as many bugs as possible.
 
-A lot of runtime issues happen because of state changes. In most languages variables are mutable and functions can have side effects, this means that we can accidently change a global variable and cause the entire program to crash.
+A lot of run-time issues happen because of state changes. In most languages variables are mutable and functions can have side effects, this means that we can accidentally change a global variable and cause the entire program to crash.
 
-Here are some examples of methods that we can use to solve this problem: type systems, automated tests, code checkers. Let's take a look at every one of these approaches. Not all languages have type systems, but even the ones that do usually allow dangerous actions like implicit casting. Automated tests are great and they help a lot, but it's hard to test every single thing, especially if the part of the code that you are testing depends on the state. Non-standard code checkers can help, but often they can't prevent even simple runtime errors.
+Here are some examples of methods that we can use to solve this problem: type systems, automated tests, code checkers. Let's take a look at every one of these approaches. Not all languages have type systems, but even the ones that do usually allow dangerous actions like implicit casting. Automated tests are great and they help a lot, but it's hard to test every single thing, especially if the part of the code that you are testing depends on the state. Non-standard code checkers can help, but often they can't prevent even simple run-time errors.
 
 ** Expressiveness
 
@@ -22,7 +22,7 @@ To solve this problem most languages just create special syntax for common thing
 
 To write programs as fast as possible we want to describe our ideas without thinking about every single operation that happens inside the computer.
 
-There are two areas that are fundamental in programming - resource management and sequencing. Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main idea of imperative programming is to allow programmers to write a sequence of intstructions that computer will execute. The only thing imperative languages can do to abstract sequencing is introducing new keywords and libraries, thus cluttering the language.
+There are two areas that are fundamental in programming - resource management and sequencing. Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main idea of imperative programming is to allow programmers to write a sequence of instructions that computer will execute. The only thing imperative languages can do to abstract sequencing is introducing new keywords and libraries, thus cluttering the language.
 
 ** Modularity
 
@@ -120,7 +120,7 @@ f x y = x*x + y*y
 main = print (f 2.1 4)
 #+END_SRC
 
-GHC (Glasgow Haskell Compiler) is the default Haskell compiler. Haskell can be both compiled and intepreted, which is why there is an interactive environment - GHCi, which you can use to run Haskell code without making a file for it. It can also tell us the type of any defined function. Let's use it to find the type of ~f~.
+GHC (Glasgow Haskell Compiler) is the default Haskell compiler. Haskell can be both compiled and interpreted, which is why there is an interactive environment - GHCi, which you can use to run Haskell code without making a file for it. It can also tell us the type of any defined function. Let's use it to find the type of ~f~.
 
 #+BEGIN_SRC haskell
 Prelude> :load sum_squares.hs 
@@ -131,7 +131,7 @@ f :: Num a => a -> a -> a
 *Main> 
 #+END_SRC
 
-Ok, let's figure out what that type is.
+OK, let's figure out what that type is.
 
 |--------------+----------------------------------------------------------------------------------|
 | Type         | Value                                                                            |
@@ -174,7 +174,7 @@ f = \x y -> x*x + y*y
 
 I will use ~<=>~ to show that two expressions are equivalent. This is not a part of the Haskell syntax.
 
-*** Arithmetics
+*** Arithmetic operations
 
 #+BEGIN_SRC haskell
 3 + 2 * 6 / 3 <=> 3 + ((2 * 6) / 3)
@@ -212,7 +212,7 @@ x ** y -- for floating numbers
 [5,4..1] <=> [5, 4, 3, 2, 1]
 #+END_SRC
 
-*** String
+*** Strings
 
 In Haskell strings are just lists of chars.
 
@@ -579,7 +579,7 @@ numbers = 1 : map (+1) numbers
 main = print $ take 3 numbers
 #+END_SRC
 
-The function ~take~ takes the first ~n~ numbers from the given list. If we run this code it won't get stuck in an infinite recursion, it will print `[1,2,3]`. Because of lazy evalutaion Haskell doesn't calculate all the numbers in the list, but only the ones that it needs.
+The function ~take~ takes the first ~n~ numbers from the given list. If we run this code it won't get stuck in an infinite recursion, it will print ~[1,2,3]~. Because of lazy evaluation Haskell doesn't calculate all the numbers in the list, but only the ones that it needs.
 
 In this example we just have all positive integers. Let's take a look at a more interesting example with a tree.
 
@@ -600,11 +600,13 @@ tree = Node 0 (dec tree) (inc tree)
         |( 2)..
 #+END_SRC
 
-(Reference: Learn Haskell Fast and Hard) ((i'll do all the references later))
+*** TODO add a nice diagram of the tree
+
+(Reference: Learn Haskell Fast and Hard) ((I'll do all the references later))
 
 ** Functors
 
-Functor is one of the most important abstractions in Haskell. Basically, it is a type class that generalises the ~map~ function.
+Functor is one of the most important abstractions in Haskell. Basically, it is a type class that generalizes the ~map~ function.
 
 #+BEGIN_SRC haskell
 class Functor f where
@@ -743,7 +745,7 @@ headMay []    = Nothing
 headMay (x:_) = Just x
 #+END_SRC
 
-Assume we have a list of lists and we want to safely get the first element of the first list. We can't use ~head~ as it will crash if you call it with an empty list, so we need to apply headMay twice. We can try using ~fmap headMay . headMay~, but then we'll get this:
+Assume we have a list of lists and we want to safely get the first element of the first list. We can't use ~head~ as it will crash if you call it with an empty list, so we need to apply ~headMay~ twice. We can try using ~fmap headMay . headMay~, but then we'll get this:
 
 #+BEGIN_SRC haskell
 Prelude> :t fmap headMay . headMay
@@ -868,7 +870,7 @@ main = print "What's your name?"
    >>= \name -> print ("Hello " ++ name ++ "!")
 #+END_SRC
 
-For the compiler these two things are identical. We can use do notation not only for the IO monad, but for any monad.
+For the compiler these two things are identical. We can use do notation not only with the IO monad, but with any monad.
 
 #+BEGIN_SRC haskell
 headMay :: [a] -> Maybe a
@@ -877,12 +879,12 @@ headMay []     = Nothing
 
 headOfHead :: [[a]] -> Maybe a
 headOfHead l = do h <- headMay l
-headMay h
+                  headMay h
 #+END_SRC
 
 ** Lazy evaluation
 
-Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this funciton ~foldl'~ from the ~Data.List~ module and use it instead, everything's ok.
+Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this function ~foldl'~ from the ~Data.List~ module and use it instead, everything's OK.
 
 *** How lazy evaluation in Haskell works?
 
@@ -1057,7 +1059,7 @@ foldl' (+) 0 [1..100]
 
 During evaluation the expression has constant memory usage.
 
-In a language with eager evaluation, like Python, it's impossible to write this function. In such languge the list gets reduced to normal form before summing. This uses the same amount of memory as the inefficient version of ~foldl~.
+In a language with eager evaluation, like Python, it's impossible to write this function. In such language the list gets reduced to normal form before summing. This uses the same amount of memory as the inefficient version of ~foldl~.
 
 Let's take a look at how we can define ~[n..m]~.
 
@@ -1073,9 +1075,9 @@ So the reduction of ~[1..100]~ to WHNF actually looks like this:
 => 1:[(1+1)..100]
 #+END_SRC
 
-So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how excatly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
+So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how exactly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
 
-(Reference: How lazy evaluation works in Haskell) ((i'll do the references later))
+(Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
 
 * Solution
 
