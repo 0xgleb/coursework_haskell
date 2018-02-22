@@ -1,4 +1,31 @@
-#+STARTUP: indent
+#+LATEX_HEADER: \usepackage[margin=1.5cm,includefoot]{geometry}
+#+LATEX_HEADER: \usepackage[none]{hyphenat}
+#+LATEX_HEADER: \usepackage{array}
+#+LATEX_HEADER: \newcolumntype{$}{>{\global\let\currentrowstyle\relax}}
+#+LATEX_HEADER: \newcolumntype{^}{>{\currentrowstyle}}
+#+LATEX_HEADER: \newcommand{\rowstyle}[1]{\gdef\currentrowstyle{#1} #1\ignorespaces}
+
+#+OPTIONS: toc:nil title:nil
+
+\begin{titlepage}
+  \begin{center}
+    \line(1,0){300} \\
+    [5mm]
+    \huge{\bfseries A-level Computer Science Coursework} \\
+    [5mm]
+    \huge{Gleb Dianov} \\
+  \end{center}
+\end{titlepage}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+* Purpose
+
+The purpose of this project is to investigate how Haskell works and how its features benefit the developers. A lot of the concepts that Haskell uses can be found in other functional programming languages and even in some imperative languages. Over the course of this project I will demonstrate how Haskell works, explain its concepts, and compare that to more commonly used languages and concepts.
 
 * Analysis
 
