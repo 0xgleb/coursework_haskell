@@ -4,6 +4,7 @@
 #+LATEX_HEADER: \newcolumntype{$}{>{\global\let\currentrowstyle\relax}}
 #+LATEX_HEADER: \newcolumntype{^}{>{\currentrowstyle}}
 #+LATEX_HEADER: \newcommand{\rowstyle}[1]{\gdef\currentrowstyle{#1} #1\ignorespaces}
+#+LATEX_HEADER: \usepackage{indentfirst}
 
 #+OPTIONS: toc:nil title:nil
 
@@ -81,7 +82,6 @@ main = print "Hello World!"
 #+END_SRC
 
 Now let's write a console program that asks user to input their name and then prints "Hello <username>!"
-
 Haskell's IO parts of the program can look very similar to "normal" programming languages.
 
 #+BEGIN_SRC haskell
@@ -160,9 +160,11 @@ f :: Num a => a -> a -> a
 
 OK, let's figure out what that type is.
 
+#+ATTR_LATEX: :align |l|l|
 |--------------+----------------------------------------------------------------------------------|
 | Type         | Value                                                                            |
 |--------------+----------------------------------------------------------------------------------|
+| /            | <>                                                                               |
 | Int          | An integer                                                                       |
 | Int -> Int   | A function that takes an integer and returns an integer                          |
 | Float -> Int | A function that takes a float and returns an integer                             |
@@ -307,7 +309,7 @@ square' x = (^) x 2
 square'' x = (^2) x
 #+END_SRC
 
-We can remove ~x~ from the right hand side, this is called η-reduction.
+We can remove ~x~ from the right hand side, this is called \eta-reduction.
 
 #+BEGIN_SRC haskell
 square''' = (^2)
@@ -351,7 +353,7 @@ Let's introduce a problem and then solve it using first Python and then Haskell.
 
 We want a function that takes a list of integers and returns the sum of all even numbers in that list.
 
-#+BEGIN_SRC
+#+BEGIN_SRC haskell
 [1, 2, 3, 4, 5] -> 2 + 4 -> 6
 #+END_SRC
 
@@ -411,7 +413,7 @@ We can do several improvements to this piece of code. First we can make the type
 evenSum :: Integral a => [a] -> a
 #+END_SRC
 
-We don't want ~accumSum~ to be a global variable, so we can make it local using ~where~ clause. Also we can use pattern matching instead of ~head~ and ~tail~. Then we can use η-reduction to get this:
+We don't want ~accumSum~ to be a global variable, so we can make it local using ~where~ clause. Also we can use pattern matching instead of ~head~ and ~tail~. Then we can use \eta-reduction to get this:
 
 #+BEGIN_SRC haskell
 evenSum :: Integral a => [a] -> a
@@ -617,7 +619,7 @@ tree = Node 0 (dec tree) (inc tree)
           inc (Node x l r) = Node (x+1) (inc l) (inc r)
 #+END_SRC
 
-#+BEGIN_SRC
+#+BEGIN_SRC haskell
         |(-2)..
   |(-1)-|
   |     |( 0)..
@@ -780,9 +782,7 @@ fmap headMay . headMay :: [[a]] -> Maybe (Maybe a)
 #+END_SRC
 
 We want to reduce ~Maybe (Maybe a)~ to just ~Maybe a~.
-
 Another example is if we want to convert a list of lists into a single list.
-
 Both of these problems can be solved using monads. Here are some definitions:
 
 #+BEGIN_SRC haskell
@@ -935,19 +935,22 @@ square (1+2)
 
 We calculated ~(1+2)~ twice, to avoid that we use graph reduction method. In this graph every block is a function application. Our situation can be represented by the following graph:
 
-[[https://hackhands.com/data/blogs/ClosedSource/lazy-evaluation-works-haskell/assets/blocks-square-0.png]]
+#+ATTR_LATEX: :width 7cm
+[[./blocks-square-0.png]]
 
 This representation is similar to the way the compiler actually represents expressions with pointers. When a programmer defines a function they define a reduction rule, then when the function is applied the graph gets reduced until it becomes a basic expression. Any expression can be represented using graphs.
 
+\newpage
+
 Our function corresponds to this rule:
 
-[[https://hackhands.com/data/blogs/ClosedSource/lazy-evaluation-works-haskell/assets/blocks-square-rule.png]]
+[[./blocks-square-rule.png]]
 
 ~x~ is a placeholder for a subgraph. And when arguments get duplicated they point to the same subgraph, hence identical graphs don't get reduced multiple times.
 
 Any subgraph that follows the rules is called a reducible expression or redex. In our case with have two redexes: function ~square~ and addition ~+~. If we start with ~square~ then we'll get this:
 
-[[https://habrastorage.org/getpro/habr/post_images/295/429/ede/295429ede71982a0ce68544095ffed35.png]]
+[[./295429ede71982a0ce68544095ffed35.png]]
 
 At every step the highlighted rectangle gets updated.
 
@@ -955,7 +958,8 @@ At every step the highlighted rectangle gets updated.
 
 If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
 
-[[https://habrastorage.org/getpro/habr/post_images/bd7/1ca/4f6/bd71ca4f639ea360db4b9966446e5459.png]]
+#+ATTR_LATEX: :width 6cm
+[[./bd71ca4f639ea360db4b9966446e5459.png]]
 
 By definition a normal graph needs to be finite and it shouldn't have cycles. Infinite recursion is not normal.
 
@@ -965,13 +969,15 @@ ones = 1 : ones
 
 Corresponds to the following cyclic graph.
 
-[[https://habrastorage.org/getpro/habr/post_images/76b/740/316/76b740316cb9f87f024dbe341cd65acc.png]]
+#+ATTR_LATEX: :width 7cm
+[[./76b740316cb9f87f024dbe341cd65acc.png]]
 
 It's not a redex and also not in the normal form - the tail of the list points to the list itself, making an infinite recursion.
 
 In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). A graph is in WHNF if it's top node is a constructor. Like expression ~(7+12):[]~ or graph
 
-[[https://habrastorage.org/getpro/habr/post_images/1ec/bb9/b87/1ecbb9b873d806a42ef7e5e42aa49a16.png]]
+#+ATTR_LATEX: :width 7cm
+[[./1ecbb9b873d806a42ef7e5e42aa49a16.png]]
 
 is in WHNF, its top node is a list constructor (~(:)~). And it's not the normal form because the first argument is a redex.
 
@@ -993,9 +999,11 @@ False && x = False
 
 This defines two reduction rules:
 
-[[https://habrastorage.org/getpro/habr/post_images/dc4/eed/151/dc4eed15184fe1bc3325378d5c7a1706.png]]
+#+ATTR_LATEX: :width 7cm
+[[./dc4eed15184fe1bc3325378d5c7a1706.png]]
 
-[[https://habrastorage.org/getpro/habr/post_images/dc4/eed/151/dc4eed15184fe1bc3325378d5c7a1706.png]]
+#+ATTR_LATEX: :width 7cm
+[[./dc4eed15184fe1bc3325378d5c7a1706.png]]
 
 Now let's take a look at this expression:
 
@@ -1118,5 +1126,7 @@ So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard 
 
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
+
 [[https://en.wikipedia.org/wiki/Church–Rosser_theorem]]
+
 [[https://wiki.haskell.org/Why_Haskell_matters]]
