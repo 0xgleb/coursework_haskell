@@ -351,7 +351,7 @@ Let's introduce a problem and then solve it using first Python and then Haskell.
 
 We want a function that takes a list of integers and returns the sum of all even numbers in that list.
 
-#+BEGIN_SRC
+#+BEGIN_SRC haskell
 [1, 2, 3, 4, 5] -> 2 + 4 -> 6
 #+END_SRC
 
