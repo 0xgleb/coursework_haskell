@@ -909,27 +909,34 @@ headOfHead l = do h <- headMay l
                   headMay h
 #+END_SRC
 
-** Lazy evaluation
+* Solution
+
+** Expressiveness
+** Safety
+** High level abstractions
+** Modularity
+** Performance
+*** Lazy evaluation
 
 Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this function ~foldl'~ from the ~Data.List~ module and use it instead, everything's OK.
 
-*** How lazy evaluation in Haskell works?
+**** How lazy evaluation in Haskell works?
 
-**** Graph reduction
+***** Graph reduction
 
 Haskell programs are executed by evaluating expressions. The primary idea is function application. Here is a simple function:
 
 #+BEGIN_SRC haskell
-square x = x*x
+square x = x**x
 #+END_SRC
 
 Let's see how the following expression gets evaluated:
 
 #+BEGIN_SRC haskell
 square (1+2)
-=> (1+2)*(1+2) -- replacing the left hand side
-=> 3*(1+2)
-=> 3*3
+=> (1+2)**(1+2) -- replacing the left hand side
+=> 3**(1+2)
+=> 3**3
 => 9
 #+END_SRC
 
@@ -954,7 +961,7 @@ Any subgraph that follows the rules is called a reducible expression or redex. I
 
 At every step the highlighted rectangle gets updated.
 
-**** Normal form
+***** Normal form
 
 If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
 
@@ -983,7 +990,7 @@ is in WHNF, its top node is a list constructor (~(:)~). And it's not the normal 
 
 The list ~ones~ is also in WHNF, its top node is a constructor. In Haskell we can create and use infinite lists.
 
-*** Execution order, lazy evaluation
+**** Execution order, lazy evaluation
 
 Often expressions have multiple redexes. Does the order at which we reduce them matter?
 
@@ -1013,7 +1020,7 @@ Now let's take a look at this expression:
 
 Both of the arguments are redexes. Because of pattern matching the first argument will get evaluated. Then the graph will get reduced without evaluating the second argument.
 
-*** Performance
+**** Performance
 
 It's mathematically proved that lazy evaluation requires fewer or the same number of reductions (calculations) as eager evaluation. Also, in some cases, it can compute expressions with errors without crashing, such as
 
@@ -1114,15 +1121,44 @@ So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard 
 
 (Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
 
-* Solution
+*** Examples
 
-** Expressiveness
-** Safety
-** High level abstractions
-** Modularity
-** Performance
+**** Quicksort
+
+One of classical examples of Haskell code, that shows how nice and expressive it is, is the Quicksort function.
+
+#+BEGIN_SRC haskell
+sort :: Ord a => [a] -> [a]
+sort (x:xs) = qsort (filter (< x) xs) ++ [x] ++ qsort (filter (>= x) xs)
+sort []     = []
+#+END_SRC
+
+At first glance it looks similar to the original Quicksort function, but it's actually less effective. It uses the same idea - divide and conquer, however the performance of the original Quicksort function relies on the very fast swap mechanism, which not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones.
+
+Let's compare performance of Haskell's ~sort~ and C's ~qsort~. First I generated a big list of random numbers.
+
+#+BEGIN_SRC haskell
+import Control.Monad
+import System.Random
+
+main :: IO ()
+main =  join
+     $  (\(r:rs) -> foldl (\p x -> p >> addToFile (',' : show x)) (writeFile file $ show r) rs)
+    <$> foldl (\rs _ -> (:) <$> (randomRIO (1, 1000) :: IO Int) <*> rs) (return []) [1..10]
+     where addToFile = appendFile file
+           file = "random_numbers_test"
+#+END_SRC
+
+This code generates one million random numbers between $1$ and $1000$, then writes them into "random_numbers" file separated by commas.
+
+Then I wrote some Haskell code to parse this file, sort the list, and write the result to another file.
+
+#+BEGIN_SRC haskell
+#+END_SRC
+
 ** Easy refactoring
 ** Concurrency
+
 
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
