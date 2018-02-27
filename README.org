@@ -909,41 +909,34 @@ headOfHead l = do h <- headMay l
                   headMay h
 #+END_SRC
 
-* Solution
-
-** Expressiveness
-** Safety
-** High level abstractions
-** Modularity
-** Performance
-*** Lazy evaluation
+** Lazy evaluation
 
 Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this function ~foldl'~ from the ~Data.List~ module and use it instead, everything's OK.
 
-**** How lazy evaluation in Haskell works?
+*** How lazy evaluation in Haskell works?
 
-***** Graph reduction
+**** Graph reduction
 
 Haskell programs are executed by evaluating expressions. The primary idea is function application. Here is a simple function:
 
 #+BEGIN_SRC haskell
-square x = x**x
+square x = x*x
 #+END_SRC
 
 Let's see how the following expression gets evaluated:
 
 #+BEGIN_SRC haskell
 square (1+2)
-=> (1+2)**(1+2) -- replacing the left hand side
-=> 3**(1+2)
-=> 3**3
+=> (1+2)*(1+2) -- replacing the left hand side
+=> 3*(1+2)
+=> 3*3
 => 9
 #+END_SRC
 
 We calculated ~(1+2)~ twice, to avoid that we use graph reduction method. In this graph every block is a function application. Our situation can be represented by the following graph:
 
 #+ATTR_LATEX: :width 7cm
-[[./blocks-square-0.png]]
+[[./img/blocks-square-0.png]]
 
 This representation is similar to the way the compiler actually represents expressions with pointers. When a programmer defines a function they define a reduction rule, then when the function is applied the graph gets reduced until it becomes a basic expression. Any expression can be represented using graphs.
 
@@ -951,22 +944,22 @@ This representation is similar to the way the compiler actually represents expre
 
 Our function corresponds to this rule:
 
-[[./blocks-square-rule.png]]
+[[./img/blocks-square-rule.png]]
 
 ~x~ is a placeholder for a subgraph. And when arguments get duplicated they point to the same subgraph, hence identical graphs don't get reduced multiple times.
 
 Any subgraph that follows the rules is called a reducible expression or redex. In our case with have two redexes: function ~square~ and addition ~+~. If we start with ~square~ then we'll get this:
 
-[[./295429ede71982a0ce68544095ffed35.png]]
+[[./img/295429ede71982a0ce68544095ffed35.png]]
 
 At every step the highlighted rectangle gets updated.
 
-***** Normal form
+**** Normal form
 
 If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
 
 #+ATTR_LATEX: :width 6cm
-[[./bd71ca4f639ea360db4b9966446e5459.png]]
+[[./img/bd71ca4f639ea360db4b9966446e5459.png]]
 
 By definition a normal graph needs to be finite and it shouldn't have cycles. Infinite recursion is not normal.
 
@@ -977,20 +970,20 @@ ones = 1 : ones
 Corresponds to the following cyclic graph.
 
 #+ATTR_LATEX: :width 7cm
-[[./76b740316cb9f87f024dbe341cd65acc.png]]
+[[./img/76b740316cb9f87f024dbe341cd65acc.png]]
 
 It's not a redex and also not in the normal form - the tail of the list points to the list itself, making an infinite recursion.
 
 In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). A graph is in WHNF if it's top node is a constructor. Like expression ~(7+12):[]~ or graph
 
 #+ATTR_LATEX: :width 7cm
-[[./1ecbb9b873d806a42ef7e5e42aa49a16.png]]
+[[./img/1ecbb9b873d806a42ef7e5e42aa49a16.png]]
 
 is in WHNF, its top node is a list constructor (~(:)~). And it's not the normal form because the first argument is a redex.
 
 The list ~ones~ is also in WHNF, its top node is a constructor. In Haskell we can create and use infinite lists.
 
-**** Execution order, lazy evaluation
+*** Execution order, lazy evaluation
 
 Often expressions have multiple redexes. Does the order at which we reduce them matter?
 
@@ -1007,10 +1000,10 @@ False && x = False
 This defines two reduction rules:
 
 #+ATTR_LATEX: :width 7cm
-[[./dc4eed15184fe1bc3325378d5c7a1706.png]]
+[[./img/dc4eed15184fe1bc3325378d5c7a1706.png]]
 
 #+ATTR_LATEX: :width 7cm
-[[./dc4eed15184fe1bc3325378d5c7a1706.png]]
+[[./img/dc4eed15184fe1bc3325378d5c7a1706.png]]
 
 Now let's take a look at this expression:
 
@@ -1020,7 +1013,7 @@ Now let's take a look at this expression:
 
 Both of the arguments are redexes. Because of pattern matching the first argument will get evaluated. Then the graph will get reduced without evaluating the second argument.
 
-**** Performance
+*** Performance
 
 It's mathematically proved that lazy evaluation requires fewer or the same number of reductions (calculations) as eager evaluation. Also, in some cases, it can compute expressions with errors without crashing, such as
 
@@ -1121,9 +1114,11 @@ So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard 
 
 (Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
 
-*** Examples
+* Solution
 
-**** Quicksort
+Now I will solve several problems in Haskell as well as C and Ruby to compare the parameters of programming languages identified in analysis.
+
+** Quicksort
 
 One of classical examples of Haskell code, that shows how nice and expressive it is, is the Quicksort function.
 
@@ -1154,10 +1149,44 @@ This code generates one million random numbers between $1$ and $1000$, then writ
 Then I wrote some Haskell code to parse this file, sort the list, and write the result to another file.
 
 #+BEGIN_SRC haskell
+import           Data.Word  (Word16)
+-- Word16 is a type for 16 bit unsigned integers
+import           Safe       (readMay)
+-- readMay is a function for parsing that returns Nothing if it fails to parse
+import           Data.List  (sort)
+import           Data.Maybe (maybe)
+-- maybe :: b -> (a -> b) -> Maybe a -> b
+
+inputFile :: FilePath
+inputFile = "random_number_test"
+
+outputFile :: FilePath
+outputFile = "haskell_result_test"
+
+decode :: String -> Maybe [Word16]
+decode = parseAccum ""
+  where parseAccum :: String -> String -> Maybe [Word16]
+        parseAccum str (',':cs) = (:) <$> readMay str <*> parseAccum "" cs
+        parseAccum str (c:cs)   = parseAccum (str ++ [c]) cs
+        parseAccum str []       = (: []) <$> readMay str
+
+encode :: [Word16] -> String
+encode []     = []
+encode [x]    = show x
+encode (x:xs) = foldl (\p n -> p ++ (',' : show n)) (show x) xs
+
+main :: IO ()
+main = fmap sort . decode <$> readFile inputFile
+   >>= maybe (print "Failed to decode!") (writeFile outputFile . encode)
 #+END_SRC
 
-** Easy refactoring
-** Concurrency
+*** Expressiveness
+*** Safety
+*** High level abstractions
+*** Modularity
+*** Performance
+*** Easy refactoring
+*** Concurrency
 
 
 * Links
@@ -1166,3 +1195,7 @@ Then I wrote some Haskell code to parse this file, sort the list, and write the 
 [[https://en.wikipedia.org/wiki/Church–Rosser_theorem]]
 
 [[https://wiki.haskell.org/Why_Haskell_matters]]
+
+[[https://github.com/gperftools/gperftools]]
+
+[[http://valgrind.org/]]
