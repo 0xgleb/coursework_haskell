@@ -1146,7 +1146,7 @@ main =  join
 
 This code generates one million random numbers between $1$ and $1000$, then writes them into "random_numbers" file separated by commas.
 
-Then I wrote some Haskell code to parse this file, sort the list, and write the result to another file.
+Then I wrote some the code to parse this file, sort the list, and write the result to another file in Haskell, C, and Ruby.
 
 #+BEGIN_SRC haskell
 import           Data.Word  (Word16)
@@ -1157,27 +1157,165 @@ import           Data.List  (sort)
 import           Data.Maybe (maybe)
 -- maybe :: b -> (a -> b) -> Maybe a -> b
 
+-- FilePath is a type synonym of String
+
+{-| The file with random numbers -}
 inputFile :: FilePath
 inputFile = "random_number_test"
 
+{-| The output file -}
 outputFile :: FilePath
 outputFile = "haskell_result_test"
 
-decode :: String -> Maybe [Word16]
+-- The SPECIALIZE pragma tells the compiler to optimize the function for the given type.
+
+{-| Takes a string with comma-separated integers and returns the list of integers.
+If the given string is invalid returns Nothing.
+-}
+{-# SPECIALIZE decode :: String -> Maybe [Word16] #-}
+decode :: Read a => String -> Maybe [a]
 decode = parseAccum ""
-  where parseAccum :: String -> String -> Maybe [Word16]
-        parseAccum str (',':cs) = (:) <$> readMay str <*> parseAccum "" cs
+  where parseAccum str (',':cs) = (:) <$> readMay str <*> parseAccum "" cs
         parseAccum str (c:cs)   = parseAccum (str ++ [c]) cs
         parseAccum str []       = (: []) <$> readMay str
 
-encode :: [Word16] -> String
+{-| Takes a list of values and returns a string with the values separated by commas -}
+{-# SPECIALIZE encode :: [Word16] -> String #-}
+encode :: Show a => [a] -> String
 encode []     = []
 encode [x]    = show x
 encode (x:xs) = foldl (\p n -> p ++ (',' : show n)) (show x) xs
 
+{-| The main IO action reads numbers from the input file, sorts them and
+writes sorted numbers to the output file
+-}
 main :: IO ()
-main = fmap sort . decode <$> readFile inputFile
+main = (fmap sort . decode :: String -> Maybe [Word16]) <$> readFile inputFile
    >>= maybe (print "Failed to decode!") (writeFile outputFile . encode)
+#+END_SRC
+
+#+BEGIN_SRC c
+#define SIZE (10)
+#define INPUT_FILE ("random_numbers_test")
+#define OUTPUT_FILE ("c_result_test")
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Just difference of two numbers
+int cmpfunc(const void * a, const void * b)
+{
+  return (*(int*)a - *(int*)b);
+}
+
+int main()
+{
+	// Initializing the file pointer
+	FILE *fs;
+
+  // current char and buffer for digits
+	char ch, buffer[32];
+	int i = 0, arr[SIZE], j = 0;
+
+	// Openning the file with file handler as fs
+	fs = fopen(INPUT_FILE, "r");
+
+	// Read the file unless the file encounters an EOF
+  for(ch = fgetc(fs); ; ch = fgetc(fs)) {
+		if(ch == ',') {
+			// Converting the content of the buffer into an array position
+			arr[j] = atoi(buffer);
+
+			// Increamenting the array position
+			j++;
+
+			// Clearing the buffer, this function takes two
+			// arguments, one is a character pointer and
+			// the other one is the size of the character array
+			bzero(buffer, 32);
+
+      // setting the buffer index to 0
+			i = 0;
+		}
+		else if (ch != EOF) {
+      // add the next character to the buffer
+			buffer[i] = ch;
+      // increment the buffer index
+			i++;
+		}
+    else { // end of the file
+      // add the number from the buffer to
+      arr[j] = atoi(buffer);
+
+      // end the loop
+      break;
+    }
+	}
+
+  // close the file
+  fclose(fs);
+
+  // sort the array
+  qsort(arr, SIZE, sizeof(int), cmpfunc);
+
+  // open the output file
+  fs = fopen(OUTPUT_FILE, "w");
+
+  // write every number (except the last one) with a comma after each
+  for(i = 0; i < SIZE - 1; i++) {
+    fprintf(fs, "%d,", arr[i]);
+  }
+
+  // write the last number
+  fprintf(fs, "%d", arr[i]);
+
+  // close the file
+  fclose(fs);
+
+  // return 0 (success code)
+  return 0;
+}
+#+END_SRC
+
+#+BEGIN_SRC ruby
+input_file_name = 'random_numbers_test'
+output_file_name = 'ruby_result_test'
+
+buffer = ''
+numbers = []
+
+# open the input file
+File.open(input_file_name) do |f|
+  # for each character c in the file
+  f.each_char do |c|
+    if c == ','
+      # convert the buffer to an integer and add to the list of numbers
+      numbers << Integer(buffer)
+      # empty the buffer
+      buffer = ''
+    else
+      # add the character to the buffer
+      buffer << c
+    end
+  end
+
+  # convert the buffer to an integer and add to the list of numbers
+  numbers << Integer(buffer)
+end
+
+# sort the numbers
+numbers = numbers.sort
+
+# open the output file
+File.open(output_file_name, 'w') do |f|
+  # remove the last number from the list
+  last = numbers.pop
+  # write all the remaining numbers separated by commas to the file
+  numbers.each { |num| f.write "#{num}," }
+  # write the last element
+  f.write last
+end
 #+END_SRC
 
 *** Expressiveness
@@ -1187,7 +1325,6 @@ main = fmap sort . decode <$> readFile inputFile
 *** Performance
 *** Easy refactoring
 *** Concurrency
-
 
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]

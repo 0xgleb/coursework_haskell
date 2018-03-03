@@ -35,7 +35,9 @@ encode []     = []
 encode [x]    = show x
 encode (x:xs) = foldl (\p n -> p ++ (',' : show n)) (show x) xs
 
-
+{-| The main IO action reads numbers from the input file, sorts them and
+writes sorted numbers to the output file
+-}
 main :: IO ()
 main = (fmap sort . decode :: String -> Maybe [Word16]) <$> readFile inputFile
    >>= maybe (print "Failed to decode!") (writeFile outputFile . encode)

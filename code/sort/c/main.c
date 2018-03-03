@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Just difference of two numbers
 int cmpfunc(const void * a, const void * b)
 {
   return (*(int*)a - *(int*)b);
@@ -16,6 +17,7 @@ int main()
 	// Initializing the file pointer
 	FILE *fs;
 
+  // current char and buffer for digits
 	char ch, buffer[32];
 	int i = 0, arr[SIZE], j = 0;
 
@@ -36,33 +38,44 @@ int main()
 			// the other one is the size of the character array
 			bzero(buffer, 32);
 
+      // setting the buffer index to 0
 			i = 0;
 		}
 		else if (ch != EOF) {
+      // add the next character to the buffer
 			buffer[i] = ch;
+      // increment the buffer index
 			i++;
 		}
-    else {
+    else { // end of the file
+      // add the number from the buffer to
       arr[j] = atoi(buffer);
-      j++;
 
+      // end the loop
       break;
     }
 	}
 
+  // close the file
   fclose(fs);
 
-  qsort(arr, j, sizeof(int), cmpfunc);
+  // sort the array
+  qsort(arr, SIZE, sizeof(int), cmpfunc);
 
+  // open the output file
   fs = fopen(OUTPUT_FILE, "w");
 
+  // write every number (except the last one) with a comma after each
   for(i = 0; i < SIZE - 1; i++) {
     fprintf(fs, "%d,", arr[i]);
   }
 
+  // write the last number
   fprintf(fs, "%d", arr[i]);
 
+  // close the file
   fclose(fs);
 
+  // return 0 (success code)
   return 0;
 }
