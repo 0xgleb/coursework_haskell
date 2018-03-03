@@ -1,6 +1,6 @@
-#define SIZE (10)
-#define INPUT_FILE ("random_numbers_test")
-#define OUTPUT_FILE ("c_result_test")
+#define SIZE (1000000)
+#define INPUT_FILE ("random_numbers")
+#define OUTPUT_FILE ("c_result")
 
 #include <stdio.h>
 #include <stdlib.h>

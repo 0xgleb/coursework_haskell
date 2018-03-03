@@ -1,5 +1,5 @@
-input_file_name = 'random_numbers_test'
-output_file_name = 'ruby_result_test'
+input_file_name = 'random_numbers'
+output_file_name = 'ruby_result'
 
 buffer = ''
 numbers = []

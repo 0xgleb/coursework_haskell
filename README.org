@@ -1136,12 +1136,17 @@ Let's compare performance of Haskell's ~sort~ and C's ~qsort~. First I generated
 import Control.Monad
 import System.Random
 
+numOfNums :: Integer
+numOfNums = 10
+
+file :: FilePath
+file = "random_numbers_test"
+
 main :: IO ()
 main =  join
      $  (\(r:rs) -> foldl (\p x -> p >> addToFile (',' : show x)) (writeFile file $ show r) rs)
-    <$> foldl (\rs _ -> (:) <$> (randomRIO (1, 1000) :: IO Int) <*> rs) (return []) [1..10]
+    <$> foldl (\rs _ -> (:) <$> (randomRIO (1, 1000) :: IO Int) <*> rs) (return []) [1..numOfNums]
      where addToFile = appendFile file
-           file = "random_numbers_test"
 #+END_SRC
 
 This code generates one million random numbers between $1$ and $1000$, then writes them into "random_numbers" file separated by commas.
@@ -1161,7 +1166,7 @@ import           Data.Maybe (maybe)
 
 {-| The file with random numbers -}
 inputFile :: FilePath
-inputFile = "random_number_test"
+inputFile = "random_numbers_test"
 
 {-| The output file -}
 outputFile :: FilePath
@@ -1316,6 +1321,41 @@ File.open(output_file_name, 'w') do |f|
   # write the last element
   f.write last
 end
+#+END_SRC
+
+Let's check if these scripts work.
+
+[[./img/sort_test.png]]
+
+Now let's change test files in the scripts to normal files, and change the number of numbers to a million.
+
+#+BEGIN_SRC haskell
+numOfNums :: Integer
+numOfNums = 10^6
+
+file :: FilePath
+file = "random_numbers"
+#+END_SRC
+
+#+BEGIN_SRC haskell
+{-| The file with random numbers -}
+inputFile :: FilePath
+inputFile = "random_numbers"
+
+{-| The output file -}
+outputFile :: FilePath
+outputFile = "haskell_result"
+#+END_SRC
+
+#+BEGIN_SRC c
+#define SIZE (1000000)
+#define INPUT_FILE ("random_numbers")
+#define OUTPUT_FILE ("c_result")
+#+END_SRC
+
+#+BEGIN_SRC ruby
+input_file_name = 'random_numbers'
+output_file_name = 'ruby_result'
 #+END_SRC
 
 *** Expressiveness
