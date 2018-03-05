@@ -66,10 +66,6 @@ In real world projects it's impossible to write a piece of code once and then ne
 
 Automated tests can help a lot with this problem too, but they have mentioned above problems.
 
-** Concurrency
-
-We want to be able to write safe concurrent applications.
-
 * Design
 
 Let's first take a look at how Haskell works and then I'll show how it's design is used to solve the identified above problems.
@@ -1118,19 +1114,141 @@ So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard 
 
 Now I will solve several problems in Haskell as well as C and Ruby to compare the parameters of programming languages identified in analysis.
 
-** Quicksort
+** Automatic differentiation
 
-One of classical examples of Haskell code, that shows how nice and expressive it is, is the Quicksort function.
+*** Safety
+*** Expressiveness
+*** Abstractions
+*** Modularity
+*** Performance
+*** Refactoring
+
+** Sort
+
+In this example I will show a Haskell script that I wrote. It reads comma-separated numbers from a file, sorts them, and writes into another file using the same format.
 
 #+BEGIN_SRC haskell
-sort :: Ord a => [a] -> [a]
-sort (x:xs) = qsort (filter (< x) xs) ++ [x] ++ qsort (filter (>= x) xs)
-sort []     = []
+{-# LANGUAGE OverloadedStrings #-}
+
+import qualified Data.ByteString.Lazy.Char8 as C
+import           Data.List                  (sort)
+
+main :: IO ()
+main = C.readFile "random_numbers"
+   >>= maybe (print "Failed to parse!")
+             ( C.writeFile "haskell_result"
+             . C.intercalate "," . fmap (C.pack . show) . sort . fmap fst
+             ) . traverse C.readInt . C.split ','
 #+END_SRC
 
-At first glance it looks similar to the original Quicksort function, but it's actually less effective. It uses the same idea - divide and conquer, however the performance of the original Quicksort function relies on the very fast swap mechanism, which not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones.
+The first line enables a language extension called ~OverloadedStrings~. It let's us write different types as strings. For example, \texttt{"random\_numbers"} is a standard string and "," is a byte string. The compiler can infer the right type of string from type definitions - the first argument of ~C.readFile~ is of type ~String~ and the first argument of ~C.intercalate~ is ~ByteString~.
 
-Let's compare performance of Haskell's ~sort~ and C's ~qsort~. First I generated a big list of random numbers.
+Then I imported two modules. The first one is from a library called ~bytestring~. The default Haskell strings are very inefficient as they are just lists of characters, but there are a lot of alternatives. One of them is using byte strings, which are arrays of bytes. There are two kinds of byte strings: strict and lazy. In this case I used a special version of lazy byte strings that interprets each byte as a character. The keyword ~qualified~ in the import statement means that the functions from that module won't be in the global namespace. ~as C~ means that we can access functions from the module using ~C.functionName~ notation.
+
+Secondly I imported sort function from the ~Data.List~ module. It's an implementation of the merge sort algorithm. One of classical examples of Haskell code, that shows how nice and expressive it is, is the Quicksort function.
+
+#+BEGIN_SRC haskell
+qsort :: Ord a => [a] -> [a]
+qsort (x:xs) = qsort (filter (< x) xs) ++ [x] ++ qsort (filter (>= x) xs)
+qsort []     = []
+#+END_SRC
+
+At first glance it looks similar to the original Quicksort function, but it's actually less effective. It uses the same idea - divide and conquer, however the performance of the original Quicksort function relies on the very fast swap mechanism, which is not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones. This is why merge sort is usually more efficient than quick sort in Haskell.
+
+In ~main~ I have a composition of lots of different small functions. Let's quickly take a look at every one of them.
+
+#+BEGIN_SRC haskell
+C.readFile :: FilePath -> IO C.ByteString
+#+END_SRC
+
+~FilePath~ is a type synonym for ~String~. ~C.readFile~ takes a file path and returns the contents of the file as a byte string.
+
+#+BEGIN_SRC haskell
+C.split :: Char -> C.ByteString -> [C.ByteString]
+#+END_SRC
+
+This function breaks a byte string into pieces separated by the byte argument, consuming the delimiter.
+
+#+BEGIN_SRC haskell
+C.readInt :: C.ByteString -> Maybe (Int, C.ByteString)
+#+END_SRC
+
+~C.readInt~ reads an ~Int~ from the beginning of the given byte string. If it fails to do that then it returns ~Nothing~, otherwise it returns the integer and the rest of the string.
+
+#+BEGIN_SRC haskell
+class Foldable t where
+  foldr :: (a -> b -> b) -> b -> t a -> b
+
+class (Functor t, Foldable t) => Traversable t where
+  traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
+#+END_SRC
+
+(Reference [[https://hackage.haskell.org/package/base-4.10.1.0/docs/Data-Traversable.html]])
+
+~traverse~ maps each element of a structure to an action, evaluates these actions from left to right, and collects the result. This gives us
+
+#+BEGIN_SRC haskell
+traverse C.readInt :: Traversable t => t C.ByteString -> Maybe (t (Int, C.ByteString))
+#+END_SRC
+
+List is in the ~Traversable~ type class, which is why we can compose this with ~C.split~
+
+#+BEGIN_SRC haskell
+traverse C.readInt . C.split ',' :: C.ByteString -> Maybe [(Int, C.ByteString)]
+#+END_SRC
+
+#+BEGIN_SRC haskell
+maybe :: b -> (a -> b) -> Maybe a -> b
+#+END_SRC
+
+The type fully explains what the function does.
+
+#+BEGIN_SRC haskell
+C.pack :: [Char] -> C.ByteString
+#+END_SRC
+
+~C.pack~ takes a string and converts into a byte string.
+
+#+BEGIN_SRC haskell
+C.intercalate :: C.ByteString -> [C.ByteString] -> C.ByteString
+#+END_SRC
+
+~C.intercalate~ joins a list of byte strings, putting the first argument between each element of the list.
+
+#+BEGIN_SRC haskell
+fmap fst :: Functor f => f (b1, b2) -> f b1
+
+sort . fmap fst :: Ord a => [(a, b)] -> [a]
+
+C.pack . show :: Show a => a -> C.ByteString
+
+fmap (C.pack . show) . sort . fmap fst :: (Ord a, Show a) => [(a, b)] -> [C.ByteString]
+
+C.intercalate "," . fmap (C.pack . show) . sort . fmap fst
+  :: (Ord a, Show a) => [(a, b)] -> C.ByteString
+#+END_SRC
+
+#+BEGIN_SRC haskell
+C.writeFile :: FilePath -> C.ByteString -> IO ()
+#+END_SRC
+
+~C.writeFile~ takes a file path and a byte string and writes the byte string to the file, overwriting existing data or creating the file if it doesn't exist.
+
+#+BEGIN_SRC haskell
+C.readFile "random_numbers" :: IO C.ByteString
+
+maybe (print "Failed to parse!")
+      ( C.writeFile "haskell_result"
+      . C.intercalate "," . fmap (C.pack . show) . sort . fmap fst
+      ) . traverse C.readInt . C.split ','
+      :: C.ByteString -> IO ()
+
+(>>=) :: Monad m => m a -> (a -> m b) -> m b
+#+END_SRC
+
+If we put all these things together we'll get ~main~. In summary, it reads numbers from \texttt{"random\_numbers"}, splits the string with comma separated integers into a list of byte strings with integers, then parses each integer, prints "Failed to parse!" in case it fails to parse, otherwise sorts the list of integers, converts each integer back into a byte string, joins the byte strings and writes the result to \texttt{"haskell\_result"}.
+
+Then I wrote a script that generates a list of random numbers in range $[1,1000]$ and writes them to a file separated by commas.
 
 #+BEGIN_SRC haskell
 import Control.Monad
@@ -1140,7 +1258,7 @@ numOfNums :: Integer
 numOfNums = 10
 
 file :: FilePath
-file = "random_numbers_test"
+file = "random_numbers"
 
 main :: IO ()
 main =  join
@@ -1149,143 +1267,44 @@ main =  join
      where addToFile = appendFile file
 #+END_SRC
 
-This code generates one million random numbers between $1$ and $1000$, then writes them into "random_numbers" file separated by commas.
+Let's test the code:
 
-Then I wrote some the code to parse this file, sort the list, and write the result to another file in Haskell, C, and Ruby.
+[[./img/sort_test_haskell.png]]
+
+*** Safety
+
+Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so.
+
+*** Expressiveness
+
+As you can see we didn't need a lot of code to solve the problem. Let's describe the algorithm in English.
+
+#+BEGIN_QUOTE
+We want to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file \texttt{"haskell\_result"}.
+#+END_QUOTE
+
+And the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
 
 #+BEGIN_SRC haskell
-import           Data.Word  (Word16)
--- Word16 is a type for 16 bit unsigned integers
-import           Safe       (readMay)
--- readMay is a function for parsing that returns Nothing if it fails to parse
-import           Data.List  (sort)
-import           Data.Maybe (maybe)
--- maybe :: b -> (a -> b) -> Maybe a -> b
+{-# LANGUAGE OverloadedStrings #-}
+import qualified Data.ByteString.Lazy.Char8 as C
 
--- FilePath is a type synonym of String
+import Data.List (sort)
 
-{-| The file with random numbers -}
-inputFile :: FilePath
-inputFile = "random_numbers_test"
-
-{-| The output file -}
-outputFile :: FilePath
-outputFile = "haskell_result_test"
-
--- The SPECIALIZE pragma tells the compiler to optimize the function for the given type.
-
-{-| Takes a string with comma-separated integers and returns the list of integers.
-If the given string is invalid returns Nothing.
--}
-{-# SPECIALIZE decode :: String -> Maybe [Word16] #-}
-decode :: Read a => String -> Maybe [a]
-decode = parseAccum ""
-  where parseAccum str (',':cs) = (:) <$> readMay str <*> parseAccum "" cs
-        parseAccum str (c:cs)   = parseAccum (str ++ [c]) cs
-        parseAccum str []       = (: []) <$> readMay str
-
-{-| Takes a list of values and returns a string with the values separated by commas -}
-{-# SPECIALIZE encode :: [Word16] -> String #-}
-encode :: Show a => [a] -> String
-encode []     = []
-encode [x]    = show x
-encode (x:xs) = foldl (\p n -> p ++ (',' : show n)) (show x) xs
-
-{-| The main IO action reads numbers from the input file, sorts them and
-writes sorted numbers to the output file
--}
 main :: IO ()
-main = (fmap sort . decode :: String -> Maybe [Word16]) <$> readFile inputFile
-   >>= maybe (print "Failed to decode!") (writeFile outputFile . encode)
+main = C.readFile "random_numbers" -- we want to read the file "random_numbers"
+   >>= maybe (print "Failed to parse!")
+             ( C.writeFile "haskell_result" -- write the result to the file "haskell_result"
+             . C.intercalate "," . fmap (C.pack . show) -- convert back to the original format
+             . sort -- sort them
+             . fmap fst ) . traverse C.readInt . C.split ',' -- parse comma-separated integers
 #+END_SRC
 
-#+BEGIN_SRC c
-#define SIZE (10)
-#define INPUT_FILE ("random_numbers_test")
-#define OUTPUT_FILE ("c_result_test")
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-// Just difference of two numbers
-int cmpfunc(const void * a, const void * b)
-{
-  return (*(int*)a - *(int*)b);
-}
-
-int main()
-{
-	// Initializing the file pointer
-	FILE *fs;
-
-  // current char and buffer for digits
-	char ch, buffer[32];
-	int i = 0, arr[SIZE], j = 0;
-
-	// Openning the file with file handler as fs
-	fs = fopen(INPUT_FILE, "r");
-
-	// Read the file unless the file encounters an EOF
-  for(ch = fgetc(fs); ; ch = fgetc(fs)) {
-		if(ch == ',') {
-			// Converting the content of the buffer into an array position
-			arr[j] = atoi(buffer);
-
-			// Increamenting the array position
-			j++;
-
-			// Clearing the buffer, this function takes two
-			// arguments, one is a character pointer and
-			// the other one is the size of the character array
-			bzero(buffer, 32);
-
-      // setting the buffer index to 0
-			i = 0;
-		}
-		else if (ch != EOF) {
-      // add the next character to the buffer
-			buffer[i] = ch;
-      // increment the buffer index
-			i++;
-		}
-    else { // end of the file
-      // add the number from the buffer to
-      arr[j] = atoi(buffer);
-
-      // end the loop
-      break;
-    }
-	}
-
-  // close the file
-  fclose(fs);
-
-  // sort the array
-  qsort(arr, SIZE, sizeof(int), cmpfunc);
-
-  // open the output file
-  fs = fopen(OUTPUT_FILE, "w");
-
-  // write every number (except the last one) with a comma after each
-  for(i = 0; i < SIZE - 1; i++) {
-    fprintf(fs, "%d,", arr[i]);
-  }
-
-  // write the last number
-  fprintf(fs, "%d", arr[i]);
-
-  // close the file
-  fclose(fs);
-
-  // return 0 (success code)
-  return 0;
-}
-#+END_SRC
+Let's compare this to an imperative solution of the problem in Ruby.
 
 #+BEGIN_SRC ruby
-input_file_name = 'random_numbers_test'
-output_file_name = 'ruby_result_test'
+input_file_name = 'random_numbers'
+output_file_name = 'ruby_result'
 
 buffer = ''
 numbers = []
@@ -1323,49 +1342,34 @@ File.open(output_file_name, 'w') do |f|
 end
 #+END_SRC
 
-Let's check if these scripts work.
+Here, as you can see, the code represents a sequence of instructions which we need to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
 
-[[./img/sort_test.png]]
-
-Now let's change test files in the scripts to normal files, and change the number of numbers to a million.
-
-#+BEGIN_SRC haskell
-numOfNums :: Integer
-numOfNums = 10^6
-
-file :: FilePath
-file = "random_numbers"
-#+END_SRC
-
-#+BEGIN_SRC haskell
-{-| The file with random numbers -}
-inputFile :: FilePath
-inputFile = "random_numbers"
-
-{-| The output file -}
-outputFile :: FilePath
-outputFile = "haskell_result"
-#+END_SRC
-
-#+BEGIN_SRC c
-#define SIZE (1000000)
-#define INPUT_FILE ("random_numbers")
-#define OUTPUT_FILE ("c_result")
-#+END_SRC
-
-#+BEGIN_SRC ruby
-input_file_name = 'random_numbers'
-output_file_name = 'ruby_result'
-#+END_SRC
-
-*** Expressiveness
-*** Safety
-*** High level abstractions
+*** Abstractions
 *** Modularity
-*** Performance
-*** Easy refactoring
-*** Concurrency
 
+This script also shows how modular Haskell is. To solve the problem I just glue together 13 different functions using 2 operators. If we want to reuse some of the functionality we can easily extract the piece of code that does it from ~main~ and put it in another function. For example, let's say we want to reuse the code for parsing.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE OverloadedStrings #-}
+
+import qualified Data.ByteString.Lazy.Char8 as C
+import           Data.List                  (sort)
+
+parse :: C.ByteString -> Maybe [Int]
+parse = fmap (fmap fst) . traverse C.readInt . C.split ','
+
+main :: IO ()
+main = C.readFile "random_numbers"
+   >>= maybe (print "Failed to parse!")
+             ( C.writeFile "haskell_result"
+             . C.intercalate "," . fmap (C.pack . show) . sort
+             ) . parse
+#+END_SRC
+
+As you can see, in Haskell it's very easy to compose and decompose code.
+
+*** Performance
+*** Refactoring
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 

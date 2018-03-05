@@ -2,7 +2,7 @@ import Control.Monad
 import System.Random
 
 numOfNums :: Integer
-numOfNums = 10^6
+numOfNums = 10
 
 file :: FilePath
 file = "random_numbers"
