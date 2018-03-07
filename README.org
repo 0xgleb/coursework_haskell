@@ -1381,7 +1381,7 @@ As you can see, in Haskell it's very easy to compose and decompose code.
 
 *** Performance
 
-Introspective sorting or introsort is an optimized version of quicksort. From the description of the module:
+Introspective sorting or introsort is an optimised version of quicksort. From the description of the module:
 
 This module implements various algorithms based on the introsort algorithm, originally described by David R. Musser in the paper /Introspective Sorting and Selection Algorithms/. It is also in widespread practical use, as the standard unstable sort used in the C++ Standard Template Library.
 
@@ -1409,10 +1409,11 @@ main = C.readFile "random_numbers"
              ) . traverse C.readInt . C.split ','
 #+END_SRC
 
+[[./img/sort_performance.png]]
+
+[[./img/optimised_haskell_sort.png]]
+
 *** Refactoring
-
-
-
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
@@ -1421,5 +1422,3 @@ main = C.readFile "random_numbers"
 [[https://wiki.haskell.org/Why_Haskell_matters]]
 
 [[https://github.com/gperftools/gperftools]]
-
-[[http://valgrind.org/]]
