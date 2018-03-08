@@ -1153,7 +1153,7 @@ qsort (x:xs) = qsort (filter (< x) xs) ++ [x] ++ qsort (filter (>= x) xs)
 qsort []     = []
 #+END_SRC
 
-At first glance it looks similar to the original Quicksort function, but it's actually less effective. It uses the same idea - divide and conquer, however the performance of the original Quicksort function relies on the very fast swap mechanism, which is not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones. This is why merge sort is usually more efficient than quick sort in Haskell.
+At first glance it looks similar to the original Quicksort function, but it's actually less effective. It uses the same idea - divide and conquer, however the performance of the original Quicksort function relies on the very fast swap mechanism, which is not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones. This is why merge sort is usually more efficient than quicksort in Haskell.
 
 In ~main~ I have a composition of lots of different small functions. Let's quickly take a look at every one of them.
 
@@ -1369,6 +1369,17 @@ main = C.readFile "random_numbers"
 As you can see, in Haskell it's very easy to compose and decompose code.
 
 *** Performance
+
+Introspective sorting or introsort is an optimized version of quicksort. From the description of the module:
+
+This module implements various algorithms based on the introsort algorithm, originally described by David R. Musser in the paper /Introspective Sorting and Selection Algorithms/. It is also in widespread practical use, as the standard unstable sort used in the C++ Standard Template Library.
+
+- Introsort is at its core a quicksort. The version implemented here has the following optimizations that make it perform better in practice:
+
+- Small segments of the array are left unsorted until a final insertion sort pass. This is faster than recursing all the way down to one-element arrays.
+- The pivot for segment [l,u) is chosen as the median of the elements at l, u-1 and (u+l)/2. This yields good behavior on mostly sorted (or reverse-sorted) arrays.
+- The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
+
 *** Refactoring
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
