@@ -905,216 +905,228 @@ headOfHead l = do h <- headMay l
                   headMay h
 #+END_SRC
 
-** Lazy evaluation
+# ** Lazy evaluation
 
-Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this function ~foldl'~ from the ~Data.List~ module and use it instead, everything's OK.
+# Haskell has a very interesting evaluation strategy. It doesn't execute expressions until it needs the result. It can make our code simpler and more modular, but it can also be confusing when it comes to estimating performance and memory usage. For example this simple expression that sums all numbers from 1 to 10^8 ~foldl 0 [1..10^8]~ requires gigabytes of memory to evaluate. But if we import the strict version of this function ~foldl'~ from the ~Data.List~ module and use it instead, everything's OK.
 
-*** How lazy evaluation in Haskell works?
+# *** How lazy evaluation in Haskell works?
 
-**** Graph reduction
+# **** Graph reduction
 
-Haskell programs are executed by evaluating expressions. The primary idea is function application. Here is a simple function:
+# Haskell programs are executed by evaluating expressions. The primary idea is function application. Here is a simple function:
 
-#+BEGIN_SRC haskell
-square x = x*x
-#+END_SRC
+# #+BEGIN_SRC haskell
+# square x = x*x
+# #+END_SRC
 
-Let's see how the following expression gets evaluated:
+# Let's see how the following expression gets evaluated:
 
-#+BEGIN_SRC haskell
-square (1+2)
-=> (1+2)*(1+2) -- replacing the left hand side
-=> 3*(1+2)
-=> 3*3
-=> 9
-#+END_SRC
+# #+BEGIN_SRC haskell
+# square (1+2)
+# => (1+2)*(1+2) -- replacing the left hand side
+# => 3*(1+2)
+# => 3*3
+# => 9
+# #+END_SRC
 
-We calculated ~(1+2)~ twice, to avoid that we use graph reduction method. In this graph every block is a function application. Our situation can be represented by the following graph:
+# We calculated ~(1+2)~ twice, to avoid that we use graph reduction method. In this graph every block is a function application. Our situation can be represented by the following graph:
 
-#+ATTR_LATEX: :width 7cm
-[[./img/blocks-square-0.png]]
+# #+ATTR_LATEX: :width 7cm
+# [[./img/blocks-square-0.png]]
 
-This representation is similar to the way the compiler actually represents expressions with pointers. When a programmer defines a function they define a reduction rule, then when the function is applied the graph gets reduced until it becomes a basic expression. Any expression can be represented using graphs.
+# This representation is similar to the way the compiler actually represents expressions with pointers. When a programmer defines a function they define a reduction rule, then when the function is applied the graph gets reduced until it becomes a basic expression. Any expression can be represented using graphs.
 
-\newpage
+# \newpage
 
-Our function corresponds to this rule:
+# Our function corresponds to this rule:
 
-[[./img/blocks-square-rule.png]]
+# [[./img/blocks-square-rule.png]]
 
-~x~ is a placeholder for a subgraph. And when arguments get duplicated they point to the same subgraph, hence identical graphs don't get reduced multiple times.
+# ~x~ is a placeholder for a subgraph. And when arguments get duplicated they point to the same subgraph, hence identical graphs don't get reduced multiple times.
 
-Any subgraph that follows the rules is called a reducible expression or redex. In our case with have two redexes: function ~square~ and addition ~+~. If we start with ~square~ then we'll get this:
+# Any subgraph that follows the rules is called a reducible expression or redex. In our case with have two redexes: function ~square~ and addition ~+~. If we start with ~square~ then we'll get this:
 
-[[./img/295429ede71982a0ce68544095ffed35.png]]
+# [[./img/295429ede71982a0ce68544095ffed35.png]]
 
-At every step the highlighted rectangle gets updated.
+# At every step the highlighted rectangle gets updated.
 
-**** Normal form
+# **** Normal form
 
-If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
+# If the graph is not a redex then it means that we already reduced everything and got the result that we wanted. In the last example the normal form was a number, but constructors of algebraic data types like ~Just~, ~Nothing~, or lists constructors ~:~ and ~[]~ are not reducible. Even though they are functions they can't be reduced, that's because they were defined using ~data~ and don't have a right-hand side. For example, graph:
 
-#+ATTR_LATEX: :width 6cm
-[[./img/bd71ca4f639ea360db4b9966446e5459.png]]
+# #+ATTR_LATEX: :width 6cm
+# [[./img/bd71ca4f639ea360db4b9966446e5459.png]]
 
-By definition a normal graph needs to be finite and it shouldn't have cycles. Infinite recursion is not normal.
+# By definition a normal graph needs to be finite and it shouldn't have cycles. Infinite recursion is not normal.
 
-#+BEGIN_SRC haskell
-ones = 1 : ones
-#+END_SRC
+# #+BEGIN_SRC haskell
+# ones = 1 : ones
+# #+END_SRC
 
-Corresponds to the following cyclic graph.
+# Corresponds to the following cyclic graph.
 
-#+ATTR_LATEX: :width 7cm
-[[./img/76b740316cb9f87f024dbe341cd65acc.png]]
+# #+ATTR_LATEX: :width 7cm
+# [[./img/76b740316cb9f87f024dbe341cd65acc.png]]
 
-It's not a redex and also not in the normal form - the tail of the list points to the list itself, making an infinite recursion.
+# It's not a redex and also not in the normal form - the tail of the list points to the list itself, making an infinite recursion.
 
-In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). A graph is in WHNF if it's top node is a constructor. Like expression ~(7+12):[]~ or graph
+# In Haskell expressions usually don't get to the normal form. Quite often we stop when we get to the weak head normal form (WHNF). A graph is in WHNF if it's top node is a constructor. Like expression ~(7+12):[]~ or graph
 
-#+ATTR_LATEX: :width 7cm
-[[./img/1ecbb9b873d806a42ef7e5e42aa49a16.png]]
+# #+ATTR_LATEX: :width 7cm
+# [[./img/1ecbb9b873d806a42ef7e5e42aa49a16.png]]
 
-is in WHNF, its top node is a list constructor (~(:)~). And it's not the normal form because the first argument is a redex.
+# is in WHNF, its top node is a list constructor (~(:)~). And it's not the normal form because the first argument is a redex.
 
-The list ~ones~ is also in WHNF, its top node is a constructor. In Haskell we can create and use infinite lists.
+# The list ~ones~ is also in WHNF, its top node is a constructor. In Haskell we can create and use infinite lists.
 
-*** Execution order, lazy evaluation
+# *** Execution order, lazy evaluation
 
-Often expressions have multiple redexes. Does the order at which we reduce them matter?
+# Often expressions have multiple redexes. Does the order at which we reduce them matter?
 
-Most languages use the strategy that reduces arguments to the normal form before reducing the function, this is called eager evaluation. However, most Haskell compilers use a different evaluation order called lazy. It first reduces the top function application. That may require calculating some of the arguments, but only as many as it needs. Let's take a look at this expression with pattern matching. The arguments will get evaluated from left to right until the top node contains a constructor. If pattern matching isn't used then the arguments don't get evaluated. If you pattern match a constructor then the argument gets reduced to WHNF.
+# Most languages use the strategy that reduces arguments to the normal form before reducing the function, this is called eager evaluation. However, most Haskell compilers use a different evaluation order called lazy. It first reduces the top function application. That may require calculating some of the arguments, but only as many as it needs. Let's take a look at this expression with pattern matching. The arguments will get evaluated from left to right until the top node contains a constructor. If pattern matching isn't used then the arguments don't get evaluated. If you pattern match a constructor then the argument gets reduced to WHNF.
 
-For example:
+# For example:
 
-#+BEGIN_SRC haskell
-(&&) :: Bool -> Bool -> Bool
-True  && x = x
-False && x = False
-#+END_SRC
+# #+BEGIN_SRC haskell
+# (&&) :: Bool -> Bool -> Bool
+# True  && x = x
+# False && x = False
+# #+END_SRC
 
-This defines two reduction rules:
+# This defines two reduction rules:
 
-#+ATTR_LATEX: :width 7cm
-[[./img/dc4eed15184fe1bc3325378d5c7a1706.png]]
+# #+ATTR_LATEX: :width 7cm
+# [[./img/dc4eed15184fe1bc3325378d5c7a1706.png]]
 
-#+ATTR_LATEX: :width 7cm
-[[./img/dc4eed15184fe1bc3325378d5c7a1706.png]]
+# #+ATTR_LATEX: :width 7cm
+# [[./img/dc4eed15184fe1bc3325378d5c7a1706.png]]
 
-Now let's take a look at this expression:
+# Now let's take a look at this expression:
 
-#+BEGIN_SRC haskell
-('H' == 'i') && ('a' == 'm')
-#+END_SRC
+# #+BEGIN_SRC haskell
+# ('H' == 'i') && ('a' == 'm')
+# #+END_SRC
 
-Both of the arguments are redexes. Because of pattern matching the first argument will get evaluated. Then the graph will get reduced without evaluating the second argument.
+# Both of the arguments are redexes. Because of pattern matching the first argument will get evaluated. Then the graph will get reduced without evaluating the second argument.
 
-*** Performance
+# *** Performance
 
-It's mathematically proved that lazy evaluation requires fewer or the same number of reductions (calculations) as eager evaluation. Also, in some cases, it can compute expressions with errors without crashing, such as
+# It's mathematically proved that lazy evaluation requires fewer or the same number of reductions (calculations) as eager evaluation. Also, in some cases, it can compute expressions with errors without crashing, such as
 
-#+BEGIN_SRC haskell
-a = 1
-b = 2
-(a == b) && (1 == (b/0))
-#+END_SRC
+# #+BEGIN_SRC haskell
+# a = 1
+# b = 2
+# (a == b) && (1 == (b/0))
+# #+END_SRC
 
-The second argument of ~(&&)~ will never get evaluated, hence the second argument of the second ~(==)~ will never get evaluated, thus we will never divide by zero and get an exception.
+# The second argument of ~(&&)~ will never get evaluated, hence the second argument of the second ~(==)~ will never get evaluated, thus we will never divide by zero and get an exception.
 
-However, the memory usage is a tricky problem. Sometimes an expression reduced to normal form can use more memory than a redex, and vice versa. Let's take a look at examples of both cases.
+# However, the memory usage is a tricky problem. Sometimes an expression reduced to normal form can use more memory than a redex, and vice versa. Let's take a look at examples of both cases.
 
-#+BEGIN_SRC haskell
-enumFromTo 1 1000
-#+END_SRC
+# #+BEGIN_SRC haskell
+# enumFromTo 1 1000
+# #+END_SRC
 
-This expression generates a list with numbers from 1 to 1000. The list itself takes much more space than the expression.
+# This expression generates a list with numbers from 1 to 1000. The list itself takes much more space than the expression.
 
-Here is another example:
+# Here is another example:
 
-#+BEGIN_SRC haskell
-((((0 + 1) + 2) + 3) + 4)
-#+END_SRC
+# #+BEGIN_SRC haskell
+# ((((0 + 1) + 2) + 3) + 4)
+# #+END_SRC
 
-The graph that represents this expression takes more space than the normal form of the expression - ~10~.
+# The graph that represents this expression takes more space than the normal form of the expression - ~10~.
 
-However Haskell allows you to force reduction using the ~seq~ combinator.
+# However Haskell allows you to force reduction using the ~seq~ combinator.
 
-#+BEGIN_SRC haskell
-seq :: a -> b -> b
-#+END_SRC
+# #+BEGIN_SRC haskell
+# seq :: a -> b -> b
+# #+END_SRC
 
-If you look at the type signature you may think that it's exactly the same as the ~const~ function (with arguments in a different order), however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l~ to force Haskell to finish reading the list. This would just force it to read the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l)~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
+# If you look at the type signature you may think that it's exactly the same as the ~const~ function (with arguments in a different order), however they are not the same. ~seq~ reduces the first argument to the WHNF and then returns the second argument. ~const~ doesn't do anything with the first argument. It's important to remember that ~seq~ doesn't reduce the first argument to the normal form. For example, if we are reading a list of lines ~l~ from a file, we can't just use ~seq l~ to force Haskell to finish reading the list. This would just force it to read the first line, because that's enough to know the constructor. To force Haskell to finish reading the file we need to use ~seq (length l)~. The only way to reduce ~length l~ to the weak head normal form is to find the length, hence to read the entire file. But in other cases this might not work, for example ~length $ (+7) <$> [1..10]~ will find the length without adding any numbers.
 
-Here is a standard use case of ~seq~ that every Haskell programmer should know - strict left fold. Here is how ~foldl~ is defined in Prelude:
+# Here is a standard use case of ~seq~ that every Haskell programmer should know - strict left fold. Here is how ~foldl~ is defined in Prelude:
 
-#+BEGIN_SRC haskell
-foldl :: (a -> b -> a) -> a -> [b] -> a
-foldl f a []     = a
-foldl f a (x:xs) = foldl f (f a x) xs
-#+END_SRC
+# #+BEGIN_SRC haskell
+# foldl :: (a -> b -> a) -> a -> [b] -> a
+# foldl f a []     = a
+# foldl f a (x:xs) = foldl f (f a x) xs
+# #+END_SRC
 
-Say we want to sum all integers from 1 to 100 (~[1..100]~). For that we would use the expression ~foldl (+) 0 [1..100]~. Here is how the evaluation process would look in that case:
+# Say we want to sum all integers from 1 to 100 (~[1..100]~). For that we would use the expression ~foldl (+) 0 [1..100]~. Here is how the evaluation process would look in that case:
 
-#+BEGIN_SRC haskell
-foldl (+) 0 [1..100]
-=> foldl (+) 0 (1:[2..100])
-=> foldl (+) (0 + 1) [2..100]
-=> foldl (+) (0 + 1) (2:[3..100])
-=> foldl (+) ((0 + 1) + 2) [3..100]
-=> foldl (+) ((0 + 1) + 2) (3:[4..100])
-=> foldl (+) (((0 + 1) + 2) + 3) [4..100]
-...
-#+END_SRC
+# #+BEGIN_SRC haskell
+# foldl (+) 0 [1..100]
+# => foldl (+) 0 (1:[2..100])
+# => foldl (+) (0 + 1) [2..100]
+# => foldl (+) (0 + 1) (2:[3..100])
+# => foldl (+) ((0 + 1) + 2) [3..100]
+# => foldl (+) ((0 + 1) + 2) (3:[4..100])
+# => foldl (+) (((0 + 1) + 2) + 3) [4..100]
+# ...
+# #+END_SRC
 
-As you can see the second argument accumulates a massive expression without reducing it, this causes high memory usage. To deal with this problem we need to keep the accumulator in WHNF. Here is how we can do this:
+# As you can see the second argument accumulates a massive expression without reducing it, this causes high memory usage. To deal with this problem we need to keep the accumulator in WHNF. Here is how we can do this:
 
-#+BEGIN_SRC haskell
-foldl' :: (a -> b -> a) -> a -> [b] -> a
-foldl' f a []     = a
-foldl' f a (x:xs) = seq a' $ foldl' f a' xs
-where a' = f a x
-#+END_SRC
+# #+BEGIN_SRC haskell
+# foldl' :: (a -> b -> a) -> a -> [b] -> a
+# foldl' f a []     = a
+# foldl' f a (x:xs) = seq a' $ foldl' f a' xs
+# where a' = f a x
+# #+END_SRC
 
-This function is defined in the module ~Data.List~. Now evaluation will look like this:
+# This function is defined in the module ~Data.List~. Now evaluation will look like this:
 
-#+BEGIN_SRC haskell
-foldl' (+) 0 [1..100]
-=> foldl' (+) 0 (1:[2..100])
-=> foldl' (+) 1 [2..100]
-=> foldl' (+) 1 (2:[3..100])
-=> foldl' (+) 3 [3..100]
-=> foldl' (+) 3 (3:[4..100])
-=> foldl' (+) 6 [4..100]
-...
-#+END_SRC
+# #+BEGIN_SRC haskell
+# foldl' (+) 0 [1..100]
+# => foldl' (+) 0 (1:[2..100])
+# => foldl' (+) 1 [2..100]
+# => foldl' (+) 1 (2:[3..100])
+# => foldl' (+) 3 [3..100]
+# => foldl' (+) 3 (3:[4..100])
+# => foldl' (+) 6 [4..100]
+# ...
+# #+END_SRC
 
-During evaluation the expression has constant memory usage.
+# During evaluation the expression has constant memory usage.
 
-In a language with eager evaluation, like Python, it's impossible to write this function. In such language the list gets reduced to normal form before summing. This uses the same amount of memory as the inefficient version of ~foldl~.
+# In a language with eager evaluation, like Python, it's impossible to write this function. In such language the list gets reduced to normal form before summing. This uses the same amount of memory as the inefficient version of ~foldl~.
 
-Let's take a look at how we can define ~[n..m]~.
+# Let's take a look at how we can define ~[n..m]~.
 
-#+BEGIN_SRC haskell
-enumFromTo n m = if n < m then n : enumFromTo (n+1) m
-                          else []
-#+END_SRC
+# #+BEGIN_SRC haskell
+# enumFromTo n m = if n < m then n : enumFromTo (n+1) m
+#                           else []
+# #+END_SRC
 
-So the reduction of ~[1..100]~ to WHNF actually looks like this:
+# So the reduction of ~[1..100]~ to WHNF actually looks like this:
 
-#+BEGIN_SRC haskell
-[1..100]
-=> 1:[(1+1)..100]
-#+END_SRC
+# #+BEGIN_SRC haskell
+# [1..100]
+# => 1:[(1+1)..100]
+# #+END_SRC
 
-So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how exactly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
+# So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how exactly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
 
-(Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
+# (Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
 
 * Solution
 
 Now I will solve several problems in Haskell as well as C and Ruby to compare the parameters of programming languages identified in analysis.
 
-** Automatic differentiation
+** Automatic differentiation using dual numbers
+
+For differentiating mathematical functions we can use dual numbers. In maths we define dual numbers this way:
+
+#+BEGIN_CENTER
+$x = a + b\epsilon$, where $\epsilon^2 = 0, \epsilon \neq 0$
+#+END_CENTER
+
+If we have a function $f$ that is defined for real numbers and we pass a dual number into it then we'll get this
+
+$$ f(a + b\epsilon) = f(a) + bf'(a)\epsilon $$
+
+This property is used for automatic differentiation.
 
 *** Safety
 *** Expressiveness
@@ -1122,7 +1134,6 @@ Now I will solve several problems in Haskell as well as C and Ruby to compare th
 *** Modularity
 *** Performance
 *** Refactoring
-
 ** Sort
 
 In this example I will show a Haskell script that I wrote. It reads comma-separated numbers from a file, sorts them, and writes into another file using the same format.
@@ -1380,7 +1391,28 @@ This module implements various algorithms based on the introsort algorithm, orig
 - The pivot for segment [l,u) is chosen as the median of the elements at l, u-1 and (u+l)/2. This yields good behavior on mostly sorted (or reverse-sorted) arrays.
 - The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
 
+#+BEGIN_SRC haskell
+{-# LANGUAGE OverloadedStrings #-}
+
+import qualified Data.ByteString.Lazy.Char8   as C
+import qualified Data.Vector.Algorithms.Intro as Alg
+import qualified Data.Vector.Unboxed          as U
+
+sort :: (Ord a, U.Unbox a) => [a] -> [a]
+sort = U.toList . U.modify Alg.sort . U.fromList
+
+main :: IO ()
+main = C.readFile "random_numbers"
+   >>= maybe (print "Failed to parse!")
+             ( C.writeFile "haskell_result"
+             . C.intercalate "," . fmap (C.pack . show) . sort . fmap fst
+             ) . traverse C.readInt . C.split ','
+#+END_SRC
+
 *** Refactoring
+
+
+
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
