@@ -30,7 +30,7 @@ numbers = numbers.sort
 File.open(output_file_name, 'w') do |f|
   # remove the last number from the list
   last = numbers.pop
-  # write all the remaining numbers separated by commas to the file
+  # write all the remaining numbers with a comma after each of them to the output file
   numbers.each { |num| f.write "#{num}," }
   # write the last element
   f.write last

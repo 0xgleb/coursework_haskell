@@ -1152,9 +1152,9 @@ main = C.readFile "random_numbers"
              ) . traverse C.readInt . C.split ','
 #+END_SRC
 
-The first line enables a language extension called ~OverloadedStrings~. It let's us write different types as strings. For example, \texttt{"random\_numbers"} is a standard string and "," is a byte string. The compiler can infer the right type of string from type definitions - the first argument of ~C.readFile~ is of type ~String~ and the first argument of ~C.intercalate~ is ~ByteString~.
+The first line enables a language extension called ~OverloadedStrings~. It allows us to use different types as strings. For example, in this script \texttt{"random\_numbers"} is a standard string and "," is a byte string. The compiler can infer the right type of string from type definitions - the first argument of ~C.readFile~ is of type ~String~ and the first argument of ~C.intercalate~ is ~ByteString~.
 
-Then I imported two modules. The first one is from a library called ~bytestring~. The default Haskell strings are very inefficient as they are just lists of characters, but there are a lot of alternatives. One of them is using byte strings, which are arrays of bytes. There are two kinds of byte strings: strict and lazy. In this case I used a special version of lazy byte strings that interprets each byte as a character. The keyword ~qualified~ in the import statement means that the functions from that module won't be in the global namespace. ~as C~ means that we can access functions from the module using ~C.functionName~ notation.
+Then I imported two modules. The first one is from a library called ~bytestring~. The default Haskell strings are very inefficient as they are just lists of characters, but there are different alternatives. One of them is using byte strings, which are arrays of bytes. There are two kinds of byte strings: strict and lazy. In this case I used a special version of lazy byte strings that interprets each byte as a character. The keyword ~qualified~ in the import statement means that the contents of the module won't be in the global namespace. ~as C~ means that we refer to the module as ~C~. For example, we can write ~C.pack~ instead of ~Data.ByteString.Lazy.Char8.pack~.
 
 Secondly I imported sort function from the ~Data.List~ module. It's an implementation of the merge sort algorithm. One of classical examples of Haskell code, that shows how nice and expressive it is, is the Quicksort function.
 
@@ -1164,9 +1164,9 @@ qsort (x:xs) = qsort (filter (< x) xs) ++ [x] ++ qsort (filter (>= x) xs)
 qsort []     = []
 #+END_SRC
 
-At first glance it looks similar to the original Quicksort function, but it's actually less effective. It uses the same idea - divide and conquer, however the performance of the original Quicksort function relies on the very fast swap mechanism, which is not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones. This is why merge sort is usually more efficient than quicksort in Haskell.
+At first glance it looks similar to the quicksort algorithm, but it's actually less efficient. It uses the same idea - divide and conquer, however the performance of the original quicksort function relies on the very fast swap mechanism, which is not something we can easily do in Haskell. As Haskell uses immutable data structures it doesn't swap any values in memory, it creates new ones. This is why merge sort is usually more efficient than quicksort in Haskell.
 
-In ~main~ I have a composition of lots of different small functions. Let's quickly take a look at every one of them.
+In ~main~ I have a composition of many different functions. Let's quickly take a look at every one of them.
 
 #+BEGIN_SRC haskell
 C.readFile :: FilePath -> IO C.ByteString
@@ -1178,7 +1178,7 @@ C.readFile :: FilePath -> IO C.ByteString
 C.split :: Char -> C.ByteString -> [C.ByteString]
 #+END_SRC
 
-This function breaks a byte string into pieces separated by the byte argument, consuming the delimiter.
+This function breaks a byte string into pieces separated by the first argument, consuming the delimiter.
 
 #+BEGIN_SRC haskell
 C.readInt :: C.ByteString -> Maybe (Int, C.ByteString)
@@ -1194,15 +1194,15 @@ class (Functor t, Foldable t) => Traversable t where
   traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
 #+END_SRC
 
-(Reference [[https://hackage.haskell.org/package/base-4.10.1.0/docs/Data-Traversable.html]])
+# (Reference [[https://hackage.haskell.org/package/base-4.10.1.0/docs/Data-Traversable.html]])
 
-~traverse~ maps each element of a structure to an action, evaluates these actions from left to right, and collects the result. This gives us
+~traverse~ maps each element of a structure to an action, evaluates these actions from left to right, and collects the result.
 
 #+BEGIN_SRC haskell
 traverse C.readInt :: Traversable t => t C.ByteString -> Maybe (t (Int, C.ByteString))
 #+END_SRC
 
-List is in the ~Traversable~ type class, which is why we can compose this with ~C.split~
+List is in the ~Traversable~ type class, which is why we can compose this with ~C.split ','~.
 
 #+BEGIN_SRC haskell
 traverse C.readInt . C.split ',' :: C.ByteString -> Maybe [(Int, C.ByteString)]
@@ -1218,7 +1218,7 @@ The type fully explains what the function does.
 C.pack :: [Char] -> C.ByteString
 #+END_SRC
 
-~C.pack~ takes a string and converts into a byte string.
+~C.pack~ takes a string and converts it into a byte string.
 
 #+BEGIN_SRC haskell
 C.intercalate :: C.ByteString -> [C.ByteString] -> C.ByteString
@@ -1298,8 +1298,8 @@ And the code I wrote does exactly that. We basically tell Haskell what we want t
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
-import qualified Data.ByteString.Lazy.Char8 as C
 
+import qualified Data.ByteString.Lazy.Char8 as C
 import Data.List (sort)
 
 main :: IO ()
@@ -1346,19 +1346,18 @@ numbers = numbers.sort
 File.open(output_file_name, 'w') do |f|
   # remove the last number from the list
   last = numbers.pop
-  # write all the remaining numbers separated by commas to the file
+  # write all the remaining numbers with a comma after each of them to the output file
   numbers.each { |num| f.write "#{num}," }
   # write the last element
   f.write last
 end
 #+END_SRC
 
-Here, as you can see, the code represents a sequence of instructions which we need to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
+Here, as you can see, the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
 
-*** Abstractions
 *** Modularity
 
-This script also shows how modular Haskell is. To solve the problem I just glue together 13 different functions using 2 operators. If we want to reuse some of the functionality we can easily extract the piece of code that does it from ~main~ and put it in another function. For example, let's say we want to reuse the code for parsing.
+This script also shows how modular Haskell is. To solve the problem I just glue together 13 different functions using 2 operators. If we want to reuse some of the functionality we can easily extract the piece of code that does what we want from ~main~ and put it in another function. For example, let's say we want to reuse the code for parsing.
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1381,7 +1380,7 @@ As you can see, in Haskell it's very easy to compose and decompose code.
 
 *** Performance
 
-To compare performance and solved the problem with C, so that I can compare the performance of C, Haskell, and Ruby.
+I solved the problem in C, so that I can compare the performance of C, Haskell, and Ruby.
 
 #+BEGIN_SRC c
 #define SIZE (1000000)
@@ -1471,7 +1470,7 @@ int main()
 
 As you can see Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast, lists are not very fast, we need to allocate memory very often.
 
-I solved this problem by replacing the sort function. I used unboxed vectors (using ~vector~ library), safe (internal) mutations, and introspective sorting (using ~vector-algorithms~).
+I solved this problem by replacing the sort function. I used unboxed vectors (using ~vector~ library), safe (internal) mutations, and introspective sorting (using ~vector-algorithms~ library).
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1495,10 +1494,18 @@ main = C.readFile "random_numbers"
 
 ~vector~ library provides efficient arrays. Unboxed types are raw values. So boxed (default) vectors are arrays of pointers and unboxed vectors are arrays of raw values.
 
+#+BEGIN_SRC haskell
+U.fromList :: U.Unbox a => [a] -> U.Vector a
+U.toList :: U.Unbox a => U.Vector a -> [a]
+#+END_SRC
+
+As you can guess from the names and types ~U.fromList~ converts a list of values that can be represented as raw values to an unboxed vector and ~U.toList~ converts an unboxed vector to a list.
+
 **** Introsort
 
-Introspective sorting or introsort is an optimised version of quicksort. From the description of the module:
+Introspective sorting or introsort is an optimised version of quicksort. From the description of the module ~Data.Vector.Algorithms.Intro~:
 
+#+BEGIN_QUOTE
 This module implements various algorithms based on the introsort algorithm, originally described by David R. Musser in the paper /Introspective Sorting and Selection Algorithms/. It is also in widespread practical use, as the standard unstable sort used in the C++ Standard Template Library.
 
 Introsort is at its core a quicksort. The version implemented here has the following optimizations that make it perform better in practice:
@@ -1506,6 +1513,7 @@ Introsort is at its core a quicksort. The version implemented here has the follo
 - Small segments of the array are left unsorted until a final insertion sort pass. This is faster than recursing all the way down to one-element arrays.
 - The pivot for segment [l,u) is chosen as the median of the elements at l, u-1 and (u+l)/2. This yields good behavior on mostly sorted (or reverse-sorted) arrays.
 - The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
+#+END_QUOTE
 
 **** Safe internal mutations
 
@@ -1518,13 +1526,13 @@ U.modify
      -> U.Vector a -> U.Vector a
 #+END_SRC
 
-First let's take a look at ~ST~ (state thread). ~ST~ is a monad, it can be described as a restricted ~IO~ monad or a monad for pure mutations. Some functions are more efficient with mutable memory, but globally mutable memory is unsafe. This is why we have the ~ST~ monad. With ~ST~ you can use internal mutations, but the whole computation "thread" is not allowed to exchange mutable state with the outside world. Using this monad you can make functions that take in normal Haskell values, then allocate mutable memory, work with it, and return normal Haskell values back.
+First let's take a look at ~ST~ (state thread). ~ST~ is a monad, it can be described as a restricted ~IO~ monad or a monad for pure mutations. Some functions are more efficient with mutable memory, but global mutable memory is unsafe. This is why we have the ~ST~ monad. With ~ST~ you can use internal mutations, but the whole computation "thread" is not allowed to exchange mutable state with the outside world. Using this monad you can make functions that take in normal Haskell values, then allocate mutable memory, work with it, and return normal Haskell values back.
 
-~ST~ type takes two types as "arguments". The first argument is the state. This is how we can be sure that the computation is pure. If the first argument is an arbitrary type variable then we know that the computation doesn't depend on the initial state, hence it is pure. The second argument is the output state. It's worth mentioning that ~ST~ provides *strict* state threads.
+~ST~ type takes two types as arguments. The first argument is the scope. This is how we can be sure that the computation is pure. If the first argument is an arbitrary type variable then we know that the computation doesn't depend on the initial state, hence it is pure. The second argument is the output state. It is worth mentioning that ~ST~ provides *strict* state threads.
 
 ~U.MVector s a~ is a mutable vector of type ~a~ in scope ~s~.
 
-~forall s.~ means that ~s~ can be anything. In this case it's used not to make ~U.modify~ parametrically polymorphic in ~c~, but to make sure that the function passed as an argument is parametrically polymorphic in ~c~. This is done so that the scope of ~ST~ of the result type of the argument function is arbitrary. In other words, this way we can be sure that the given function returns a pure computation.
+~forall s.~ means that ~s~ can be anything. In this case it's used not to make ~U.modify~ parametrically polymorphic in ~c~, but to make sure that the function passed as an argument is parametrically polymorphic in ~c~. This is done so that the scope of ~ST~ of the result type of the argument function has arbitrary type. In other words, this way we can be sure that the given function returns a pure computation.
 
 So ~U.modify~ takes a function that does a pure computation in ~ST~ and an unboxed vector, and it returns a new vector which is the result of applying the given computation to the given vector.
 
@@ -1537,11 +1545,21 @@ Alg.sort
 
 ~Data.Vector.Generic.Mutable.Base.MVector~ is a class of mutable vectors and ~U.MVector~ is in it.
 
+~PrimMonad~ is a type class for primitive state-transformer monads (~IO~ and ~ST~). ~IO~ and ~ST~ have many operations that are almost the same for both of the monads, which is why ~PrimMonad~ type class was created. This means that ~Alg.sort~ works with both ~ST~ and ~IO~. ~PrimState~ is defined in the type class ~PrimMonad~. It's an associated type giving the type of the state token (~s~ in case of ~ST s~).
+
+~Alg.sort~ takes a mutable vector and sorts it, returning the unit type ~()~ wrapped in a state-transformer monad. So we can pass ~Alg.sort~ as an argument to ~U.modify~.
+
+#+BEGIN_SRC haskell
+U.modify Alg.sort :: (Ord a, U.Unbox a) => U.Vector a -> U.Vector a
+#+END_SRC
+
 **** The result of the optimizations
 
 [[./img/optimised_haskell_sort.png]]
 
-*** Refactoring
+As you can see this significantly improved performance. If this still isn't fast enough for you, there are other optimizations that can be done: you can use the foreign function interface to call C functions, reduce the number of different conversions in the script, completely get rid of lists, etc.
+
+# *** Refactoring
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
