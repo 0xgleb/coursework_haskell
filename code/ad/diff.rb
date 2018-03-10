@@ -18,7 +18,9 @@ class Dual
     Dual.new val: val * other.val, diff: val * other.diff + diff * other.val
   end
 
-  
+  def **(other)
+    Dual.new 
+  end
 end
 
 module Kernel
@@ -31,3 +33,29 @@ module Kernel
     end
   end
 end
+
+Math.singleton_class.prepend Module.new {
+  def sin(x)
+    case x
+    when Dual
+      Dual.new val: sin(x.val), diff: x.diff * cos(x.val)
+    else super
+    end
+  end
+
+  def cos(x)
+    case x
+    when Dual
+      Dual.new val: cos(x.val), diff: -x.diff * sin(x.val)
+    else super
+    end
+  end
+
+  def exp(x)
+    case x
+    when Dual
+      Dual.new val: exp(x.val), diff: x.diff * exp(x.val)
+    else super
+    end
+  end
+}
