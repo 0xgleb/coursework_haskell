@@ -1381,15 +1381,97 @@ As you can see, in Haskell it's very easy to compose and decompose code.
 
 *** Performance
 
-Introspective sorting or introsort is an optimised version of quicksort. From the description of the module:
+To compare performance and solved the problem with C, so that I can compare the performance of C, Haskell, and Ruby.
 
-This module implements various algorithms based on the introsort algorithm, originally described by David R. Musser in the paper /Introspective Sorting and Selection Algorithms/. It is also in widespread practical use, as the standard unstable sort used in the C++ Standard Template Library.
+#+BEGIN_SRC c
+#define SIZE (1000000)
+#define INPUT_FILE ("random_numbers")
+#define OUTPUT_FILE ("c_result")
 
-- Introsort is at its core a quicksort. The version implemented here has the following optimizations that make it perform better in practice:
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-- Small segments of the array are left unsorted until a final insertion sort pass. This is faster than recursing all the way down to one-element arrays.
-- The pivot for segment [l,u) is chosen as the median of the elements at l, u-1 and (u+l)/2. This yields good behavior on mostly sorted (or reverse-sorted) arrays.
-- The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
+// Just difference of two numbers
+int cmpfunc(const void * a, const void * b)
+{
+  return (*(int*)a - *(int*)b);
+}
+
+int main()
+{
+	// Initializing the file pointer
+	FILE *fs;
+
+  // current char and buffer for digits
+	char ch, buffer[32];
+	int i = 0, arr[SIZE], j = 0;
+
+	// Openning the file with file handler as fs
+	fs = fopen(INPUT_FILE, "r");
+
+	// Read the file unless the file encounters an EOF
+  for(ch = fgetc(fs); ; ch = fgetc(fs)) {
+		if(ch == ',') {
+			// Converting the content of the buffer into an array position
+			arr[j] = atoi(buffer);
+
+			// Increamenting the array position
+			j++;
+
+			// Clearing the buffer, this function takes two
+			// arguments, one is a character pointer and
+			// the other one is the size of the character array
+			bzero(buffer, 32);
+
+      // setting the buffer index to 0
+			i = 0;
+		}
+		else if (ch != EOF) {
+      // add the next character to the buffer
+			buffer[i] = ch;
+      // increment the buffer index
+			i++;
+		}
+    else { // end of the file
+      // add the number from the buffer to
+      arr[j] = atoi(buffer);
+
+      // end the loop
+      break;
+    }
+	}
+
+  // close the file
+  fclose(fs);
+
+  // sort the array
+  qsort(arr, SIZE, sizeof(int), cmpfunc);
+
+  // open the output file
+  fs = fopen(OUTPUT_FILE, "w");
+
+  // write every number (except the last one) with a comma after each
+  for(i = 0; i < SIZE - 1; i++) {
+    fprintf(fs, "%d,", arr[i]);
+  }
+
+  // write the last number
+  fprintf(fs, "%d", arr[i]);
+
+  // close the file
+  fclose(fs);
+
+  // return 0 (success code)
+  return 0;
+}
+#+END_SRC
+
+[[./img/sort_performance.png]]
+
+As you can see Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast, lists are not very fast, we need to allocate memory very often.
+
+I solved this problem by replacing the sort function. I used unboxed vectors (using ~vector~ library), safe (internal) mutations, and introspective sorting (using ~vector-algorithms~).
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1409,7 +1491,53 @@ main = C.readFile "random_numbers"
              ) . traverse C.readInt . C.split ','
 #+END_SRC
 
-[[./img/sort_performance.png]]
+**** Unboxed vectors
+
+~vector~ library provides efficient arrays. Unboxed types are raw values. So boxed (default) vectors are arrays of pointers and unboxed vectors are arrays of raw values.
+
+**** Introsort
+
+Introspective sorting or introsort is an optimised version of quicksort. From the description of the module:
+
+This module implements various algorithms based on the introsort algorithm, originally described by David R. Musser in the paper /Introspective Sorting and Selection Algorithms/. It is also in widespread practical use, as the standard unstable sort used in the C++ Standard Template Library.
+
+Introsort is at its core a quicksort. The version implemented here has the following optimizations that make it perform better in practice:
+
+- Small segments of the array are left unsorted until a final insertion sort pass. This is faster than recursing all the way down to one-element arrays.
+- The pivot for segment [l,u) is chosen as the median of the elements at l, u-1 and (u+l)/2. This yields good behavior on mostly sorted (or reverse-sorted) arrays.
+- The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
+
+**** Safe internal mutations
+
+Let's take a look at types of ~U.modify~ and ~Alg.sort~.
+
+#+BEGIN_SRC haskell
+U.modify
+  :: U.Unbox a =>
+     (forall s. U.MVector s a -> GHC.ST.ST s ())
+     -> U.Vector a -> U.Vector a
+#+END_SRC
+
+First let's take a look at ~ST~ (state thread). ~ST~ is a monad, it can be described as a restricted ~IO~ monad or a monad for pure mutations. Some functions are more efficient with mutable memory, but globally mutable memory is unsafe. This is why we have the ~ST~ monad. With ~ST~ you can use internal mutations, but the whole computation "thread" is not allowed to exchange mutable state with the outside world. Using this monad you can make functions that take in normal Haskell values, then allocate mutable memory, work with it, and return normal Haskell values back.
+
+~ST~ type takes two types as "arguments". The first argument is the state. This is how we can be sure that the computation is pure. If the first argument is an arbitrary type variable then we know that the computation doesn't depend on the initial state, hence it is pure. The second argument is the output state. It's worth mentioning that ~ST~ provides *strict* state threads.
+
+~U.MVector s a~ is a mutable vector of type ~a~ in scope ~s~.
+
+~forall s.~ means that ~s~ can be anything. In this case it's used not to make ~U.modify~ parametrically polymorphic in ~c~, but to make sure that the function passed as an argument is parametrically polymorphic in ~c~. This is done so that the scope of ~ST~ of the result type of the argument function is arbitrary. In other words, this way we can be sure that the given function returns a pure computation.
+
+So ~U.modify~ takes a function that does a pure computation in ~ST~ and an unboxed vector, and it returns a new vector which is the result of applying the given computation to the given vector.
+
+#+BEGIN_SRC haskell
+Alg.sort
+  :: (Ord e, Data.Vector.Generic.Mutable.Base.MVector v e,
+      Control.Monad.Primitive.PrimMonad m) =>
+     v (Control.Monad.Primitive.PrimState m) e -> m ()
+#+END_SRC
+
+~Data.Vector.Generic.Mutable.Base.MVector~ is a class of mutable vectors and ~U.MVector~ is in it.
+
+**** The result of the optimizations
 
 [[./img/optimised_haskell_sort.png]]
 
