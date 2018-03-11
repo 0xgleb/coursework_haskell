@@ -1136,7 +1136,7 @@ This property is used for automatic differentiation.
 *** Refactoring
 ** Sort
 
-In this example I will show a Haskell script that I wrote. It reads comma-separated numbers from a file, sorts them, and writes into another file using the same format.
+In this example I will discuss a Haskell script that I wrote. It reads comma-separated numbers from a file, sorts them, and writes into another file using the same format.
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1314,11 +1314,15 @@ main = C.readFile "random_numbers" -- we want to read the file "random_numbers"
 Let's compare this to an imperative solution of the problem in Ruby.
 
 #+BEGIN_SRC ruby
+
 input_file_name = 'random_numbers'
 output_file_name = 'ruby_result'
 
+
 buffer = ''
 numbers = []
+
+
 
 # open the input file
 File.open(input_file_name) do |f|
@@ -1563,8 +1567,4 @@ As you can see this significantly improved performance. If this still isn't fast
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
-[[https://en.wikipedia.org/wiki/Church–Rosser_theorem]]
-
-[[https://wiki.haskell.org/Why_Haskell_matters]]
-
-[[https://github.com/gperftools/gperftools]]
+[[ https://wiki.haskell.org/Why_Haskell_matters]]
