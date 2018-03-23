@@ -26,7 +26,7 @@
 
 * Purpose
 
-The purpose of this project is to investigate how Haskell works and how its features benefit the developers. A lot of the concepts that Haskell uses can be found in other functional programming languages and even in some imperative languages. Over the course of this project I will demonstrate how Haskell works, explain its concepts, and compare that to more commonly used languages and concepts.
+The purpose of this project is to investigate how Haskell works and how its features benefit the developers. This investigation will show why Haskell as a high level language is better than standard imperative languages in terms of safety, expressiveness, high-level abstractions, modularity and performance. A lot of the concepts that Haskell uses can be found in other functional programming languages and even in some imperative languages. Over the course of this project I will demonstrate how Haskell works, explain its concepts, and compare that to more commonly used languages and concepts.
 
 * Analysis
 
@@ -60,17 +60,14 @@ We want to reuse as much code as possible. We also should be able to easily comp
 
 Depending on what we are developing we have different performance requirements, so we want programming languages to help us make efficient programs.
 
-** Easy refactoring
+# ** Easy refactoring
 
-In real world projects it's impossible to write a piece of code once and then never change it. This is why we want to be able to change existing code and to add new features without breaking anything.
+# In real world projects it's impossible to write a piece of code once and then never change it. This is why we want to be able to change existing code and to add new features without breaking anything.
 
-Automated tests can help a lot with this problem too, but they have mentioned above problems.
+# Automated tests can help a lot with this problem too, but they have mentioned above problems.
 
-* Design
-
-Let's first take a look at how Haskell works and then I'll show how it's design is used to solve the identified above problems.
-
-** Hello World and more.
+** How Haskell works
+*** Hello World and more.
 
 #+BEGIN_SRC haskell
 main :: IO ()
@@ -97,15 +94,15 @@ main = print "What's your name?" >> getLine >>= print . (++ "!") . ("Hello " ++)
 
 We will come back to both of these examples later.
 
-** Function purity
+*** Function purity
 
 Haskell is very different from most languages. In Haskell all variables are immutable. This means that you don't really have variables, you only have constants. Also in Haskell all functions are pure. A pure function a function that any time it gets called with the same arguments returns the same result. Pure functions don't have side effects; they can't print something to console, read files or modify variables. Functions in Haskell are like functions in maths, they are just mappings between types. These properties make testing and debugging code much easier.
 
-** Lazy evaluation
+*** Lazy evaluation
 
 Another aspect that makes Haskell very different from an average programming language is the fact that by default it uses lazy evaluation. This means that functions won't get evaluated until the result is needed. When a program gets executed it won't do unnecessary computations.
 
-** Defining functions
+*** Defining functions
 
 Let's define a function ~f~ that squares a number in both Python and Haskell. Here is how it would look like in Python:
 
@@ -124,7 +121,7 @@ In Haskell to pass arguments into a function we don't use brackets and/or commas
 
 In Haskell functions and types are the two primary things and everything is centered around them, so it makes sense why it's very easy to define them.
 
-** Introduction to the type system
+*** Introduction to the type system
 
 In Haskell you don't need to explicitly declare types of functions or variables, the compiler will derive them for you. However, explicitly declaring types of functions and variables is a good practice. Let's declare the type of the previous function and then write a main function to test ~f~.
 
@@ -149,9 +146,9 @@ GHC (Glasgow Haskell Compiler) is the default Haskell compiler. Haskell can be b
 Prelude> :load sum_squares.hs 
 [1 of 1] Compiling Main             ( sum_squares.hs, interpreted )
 Ok, modules loaded: Main.
-*Main> :t f
+**Main> :t f
 f :: Num a => a -> a -> a
-*Main> 
+**Main> 
 #+END_SRC
 
 OK, let's figure out what that type is.
@@ -195,17 +192,17 @@ To define functions we can use another notation - lambda functions.
 f = \x y -> x*x + y*y
 #+END_SRC
 
-** Basic minimum of Haskell
+*** Basic minimum of Haskell
 
 I will use ~<=>~ to show that two expressions are equivalent. This is not a part of the Haskell syntax.
 
-*** Arithmetic operations
+**** Arithmetic operations
 
 #+BEGIN_SRC haskell
 3 + 2 * 6 / 3 <=> 3 + ((2 * 6) / 3)
 #+END_SRC
 
-*** Logic
+**** Logic
 
 #+BEGIN_SRC haskell
 True || False <=> True
@@ -214,14 +211,14 @@ True == False <=> False
 True /= False <=> True
 #+END_SRC
 
-*** Powers
+**** Powers
 
 #+BEGIN_SRC haskell
 x ^ n  -- for non-negative integer powers
 x ** y -- for floating numbers
 #+END_SRC
 
-*** Lists
+**** Lists
 
 #+BEGIN_SRC haskell
 [] -- empty list
@@ -237,7 +234,7 @@ x ** y -- for floating numbers
 [5,4..1] <=> [5, 4, 3, 2, 1]
 #+END_SRC
 
-*** Strings
+**** Strings
 
 In Haskell strings are just lists of chars.
 
@@ -249,7 +246,7 @@ In Haskell strings are just lists of chars.
 
 This is not very efficient, which is why in most cases people use other data types that represent strings.
 
-*** Tuples
+**** Tuples
 
 #+BEGIN_SRC haskell
 -- All of these tuples are valid
@@ -264,7 +261,7 @@ fst (x, y, z) -- ERROR: fst :: (a, b) -> a
 snd (x, y, z) -- ERROR: snd :: (a, b) -> b
 #+END_SRC
 
-** Applying functions
+*** Applying functions
 
 Here are two operators that are used very often.
 
@@ -289,9 +286,9 @@ f $ g $ h x <=> f (g (h x))
 (f . g . h) x <=> f . g . h $ x <=> f (g (h x))
 #+END_SRC
 
-** More on the syntax
+*** More on the syntax
 
-*** Infix and prefix notation
+**** Infix and prefix notation
 
 #+BEGIN_SRC haskell
 square :: Num a => a -> a
@@ -322,7 +319,7 @@ add = (+)
 5 `add` 4 <=> add 5 4 <=> 9
 #+END_SRC
 
-*** Conditions
+**** Conditions
 
 Type class ~Ord~ is for types that can be ordered.
 
@@ -343,7 +340,7 @@ absolute' x
 
 In Haskell indentation is very important. Just like in Python programs with incorrect indentation will not work or, in some cases, will work, but not the way it was intended. Haskell uses spaces instead of tabs, if you try to use tabs then the program won't compile.
 
-** Functional style
+*** Functional style
 
 Let's introduce a problem and then solve it using first Python and then Haskell.
 
@@ -424,7 +421,7 @@ Pattern matching is using values instead of variable arguments. We can't use any
 
 We can simplify this even more using higher order functions.
 
-** Higher order functions
+*** Higher order functions
 
 Higher order functions are functions that take another function as an argument. Here are several examples:
 
@@ -473,9 +470,9 @@ evenSum :: Integral a => [a] -> a
 evenSum = foldl (+) 0 . filter even
 #+END_SRC
 
-** Defining your own types
+*** Defining your own types
 
-*** type
+**** type
 
 ~type TypeName = AnotherType~ just makes a type synonym of ~String~.
 
@@ -485,7 +482,7 @@ type Name = String
 
 ~Name~ and ~String~ are the same type. This is useful for making type declarations more meaningful.
 
-*** data
+**** data
 
 ~data NewDataType = TypeConstructor AnotherType~ is how we make a new simple type. This code makes a type constructor which is a special function that allows us to create instances of the ~NewDataType~. We don't need to write an implementation for this function, we get it by defining the type.
 
@@ -544,9 +541,9 @@ data Person = Person { name :: String
 
 This gives us the same ~name~ and ~age~ functions.
 
-** Recursive types
+*** Recursive types
 
-*** Lists
+**** Lists
 
 List is a common example of a recursive type. Here is how we can define the list type:
 
@@ -581,7 +578,7 @@ data List a = Empty | Cons a (List a)
      deriving (Show, Read, Eq, Ord)
 #+END_SRC
 
-*** Trees
+**** Trees
 
 Here is another example of a recursive data type - binary trees.
 
@@ -593,7 +590,7 @@ data BinTree a = Empty
 
 Because we used an arbitrary type variable ~a~ in the type declaration we can make a lot of different trees. For example we can make trees of trees.
 
-** Infinite structures
+*** Infinite structures
 
 Haskell uses lazy evaluation, which is why we can have infinite data structures. For example in Haskell we can do this:
 
@@ -625,11 +622,11 @@ tree = Node 0 (dec tree) (inc tree)
         |( 2)..
 #+END_SRC
 
-*** TODO add a nice diagram of the tree
+**** TODO add a nice diagram of the tree
 
 (Reference: Learn Haskell Fast and Hard) ((I'll do all the references later))
 
-** Functors
+*** Functors
 
 Functor is one of the most important abstractions in Haskell. Basically, it is a type class that generalizes the ~map~ function.
 
@@ -696,7 +693,7 @@ incrementedPair :: (Int, Int)
 incrementedPair = fmap (+1) pairOfNumbers -- = (2, 4)
 #+END_SRC
 
-** Applicative functors
+*** Applicative functors
 
 As you know ~Maybe~ is a functor. This is why we can do this:
 
@@ -762,7 +759,7 @@ instance Applicative (Reader r) where
     f <*> g = Reader $ \r -> runReader f r $ runReader g r
 #+END_SRC
 
-** Monads
+*** Monads
 
 #+BEGIN_SRC haskell
 headMay :: [a] -> Maybe a
@@ -835,7 +832,7 @@ Prelude Control.Monad> :t headMay >=> headMay
 headMay >=> headMay :: [[c]] -> Maybe c
 #+END_SRC
 
-** IO
+*** IO
 
 In Haskell functions are pure, however printing to console, reading/writing files, and other IO actions don't give the same results every time you call them. To deal with IO actions Haskell has a special monad - IO monad. This allows us to isolate pure and impure parts of the code. In our program we have ~main~ procedure which has type ~IO ()~.
 
@@ -843,7 +840,7 @@ In Haskell functions are pure, however printing to console, reading/writing file
 data () = ()
 #+END_SRC
 
-*** Printing to console
+**** Printing to console
 
 #+BEGIN_SRC haskell
 putStr :: String -> IO ()   -- prints the given string 
@@ -859,7 +856,7 @@ main :: IO ()
 main = print "Hello World!"
 #+END_SRC
 
-*** Reading user console input
+**** Reading user console input
 
 #+BEGIN_SRC haskell
 getChar :: IO Char
@@ -873,7 +870,7 @@ main :: IO ()
 main = print "What's your name?" >> getLine >>= print . ("Hello " ++) . (++ "!")
 #+END_SRC
 
-*** Do notation
+**** Do notation
 
 We can use a simpler notation for monads that is more similar to imperative programming languages.
 
@@ -1109,6 +1106,36 @@ headOfHead l = do h <- headMay l
 # So the new argument is not ~2~, it's ~(1+1)~. This shows us that it's very hard to predict how exactly expressions are evaluated. The actual definition of ~enumFromTo~ is different from the code above.
 
 # (Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
+
+* Design
+
+To compare Haskell to another high-level language (Ruby) in terms of the identified in analysis parameters of high-level languages I wrote several scripts.
+
+** Sorting a big file
+
+I chose this problem to compare performance of two high-level languages (Haskell and Ruby) and a low-level language (C). Even though this investigation is about high-level languages I've decided to include a C version of the script just to compare performance of high-level languages to low-level languages. Here is the algorithm that the scripts need to implement:
+
+#+BEGIN_QUOTE
+We want to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file \texttt{"\{language name\}\_result"}.
+#+END_QUOTE
+
+Although the main purpose of this problem is to compare performance it also relates to the other criteria.
+
+** Reverse polish server
+
+This problem focuses mostly on safety, high-level abstractions and expressiveness of high-level languages. Here is the algorithm that the scripts need to implement:
+
+#+BEGIN_QUOTE
+We want to have a web server that has the following API endpoints:
+
+POST: /check - extracts an expression in reverse polish notation and returns a response with code 200 and response body "valid" if the expression is valid or an response with error code 400 and error message "invalid" if the expression is invalid.
+
+POST: /evaluate - extracts an expression in reverse polish notation and returns a response with code 200 and response body containing the result of evaluating the expression if the expression is valid, otherwise returns a response with error code 400 and error message "invalid".
+
+We also want a client side that reads an expression in reverse polish notation from command line and then let's use pick an action: check or evaluate. If the use picks check then the script sends a /check request to the server and prints the result. If the user picks evaluate then the script sends an /evaluate request and prints the result.
+#+END_QUOTE
+
+This way I will show how high-level abstractions and types can be used for defining REST APIs and what the benefits of doing so.
 
 * Solution
 
@@ -1563,7 +1590,21 @@ U.modify Alg.sort :: (Ord a, U.Unbox a) => U.Vector a -> U.Vector a
 
 As you can see this significantly improved performance. If this still isn't fast enough for you, there are other optimizations that can be done: you can use the foreign function interface to call C functions, reduce the number of different conversions in the script, completely get rid of lists, etc.
 
-# *** Refactoring
+*** Abstractions
+
+This example also shows what Haskell's high level abstractions can do. The part from this example that I particularly enjoy is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. It is very strict and it forces you to write code that exactly matches all the types, unlike many languages it doesn't do implicit type casting. At the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
+
+* Conclusion
+** Safety
+
+Haskell allows you to encode logic in types. The benefits of this approach is that at compile time your code is checked and it must follow the types, so if your logic is encoded in types then the compiler checks that your code follows your logic. I showed this with the web server example, there I encoded the API in types. Then when I implemented the API the compiler checked that the code implements the specified API.
+
+Using Haskell you can avoid almost all run-time errors. For example, if you have a function that can fail then you encode that fail in types by wrapping the result in ~Maybe~, ~Either a~ or another monad. This way when you actually use the function the compiler will force you to check that the function didn't fail, otherwise the code won't type check.
+
+** Expressiveness
+** High level abstractions
+** Modularity
+** Performance
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
