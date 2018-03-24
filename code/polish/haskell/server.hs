@@ -2,9 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
 
-import           Control.Monad.Trans
 import           Data.Proxy
--- import           Data.Text
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Safe
@@ -22,22 +20,31 @@ data Expr a = Expr a :+: Expr a
             | Number a
             deriving Show
 
-parse :: (Read a, Num a) => String -> Maybe (Expr a)
-parse = flip parseAccum []
-  where parseAccum :: (Read a, Num a) => String -> [Expr a] -> Maybe (Expr a)
-        parseAccum []       [x]        = Just x
-        parseAccum ('+':cs) (x1:x2:xs) = parseAccum cs $ x1 :+: x2 : xs
-        parseAccum ('-':cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
-        parseAccum ('*':cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
-        parseAccum ('/':cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
-        parseAccum (' ':cs) exprs      = parseAccum cs exprs
-        parseAccum str      exprs      = readMay (takeWhile (/= ' ') str)
-                                     >>= parseAccum (dropWhile (/= ' ') str) . (: exprs) . Number
+eval :: (Num a, Fractional a) => Expr a -> a
+eval (x :+: y)  = eval x + eval y
+eval (x :-: y)  = eval x - eval y
+eval (x :*: y)  = eval x * eval y
+eval (x :/: y)  = eval x / eval y
+eval (Number x) = x
 
-type API = ReqBody '[JSON] String :> Post '[JSON] String
+parse :: (Read a, Fractional a) => String -> Maybe (Expr a)
+parse = flip parseAccum [] . words
+  where parseAccum :: (Read a, Num a) => [String] -> [Expr a] -> Maybe (Expr a)
+        parseAccum []       [x]        = Just x
+        parseAccum ("+":cs) (x1:x2:xs) = parseAccum cs $ x1 :+: x2 : xs
+        parseAccum ("-":cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
+        parseAccum ("*":cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
+        parseAccum ("/":cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
+        parseAccum (str:cs) exprs      = readMay str >>= parseAccum cs . (: exprs) . Number
+        parseAccum _        _          = Nothing
+
+type API = "check" :> ReqBody '[JSON] String :> Post '[JSON] Bool
+      :<|> "evaluate" :> ReqBody '[JSON] String :> Post '[JSON] Float
 
 server :: Server API
-server = return . maybe "invalid" (const "valid") . parse
+server = maybe (return False) (const $ return True) . parse
+    :<|> maybe invalid return . fmap eval . parse
+    where invalid = throwError err400 { errBody = "Invalid!" }
 
 api :: Proxy API
 api = Proxy
