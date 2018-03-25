@@ -11,4 +11,3 @@ type API = "check" :> ReqBody '[JSON] String :> Post '[JSON] Bool
 
 api :: Proxy API
 api = Proxy
-

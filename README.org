@@ -1141,27 +1141,8 @@ This way I will show how high-level abstractions and types can be used for defin
 
 Now I will solve several problems in Haskell as well as C and Ruby to compare the parameters of programming languages identified in analysis.
 
-** Automatic differentiation using dual numbers
-
-For differentiating mathematical functions we can use dual numbers. In maths we define dual numbers this way:
-
-#+BEGIN_CENTER
-$x = a + b\epsilon$, where $\epsilon^2 = 0, \epsilon \neq 0$
-#+END_CENTER
-
-If we have a function $f$ that is defined for real numbers and we pass a dual number into it then we'll get this
-
-$$ f(a + b\epsilon) = f(a) + bf'(a)\epsilon $$
-
-This property is used for automatic differentiation.
-
-*** Safety
-*** Expressiveness
-*** Abstractions
-*** Modularity
-*** Performance
-*** Refactoring
-** Sort
+** Sorting a big file
+*** The code
 
 In this example I will discuss a Haskell script that I wrote. It reads comma-separated numbers from a file, sorts them, and writes into another file using the same format.
 
@@ -1594,6 +1575,222 @@ As you can see this significantly improved performance. If this still isn't fast
 
 This example also shows what Haskell's high level abstractions can do. The part from this example that I particularly enjoy is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. It is very strict and it forces you to write code that exactly matches all the types, unlike many languages it doesn't do implicit type casting. At the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
 
+** Reverse Polish server
+*** The code
+
+To implement the server I created two files: one for the API and one for the implementation of the API. First I defined the API:
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
+
+module API where
+
+import           Data.Proxy
+import           Servant
+
+type API = "check" :> ReqBody '[JSON] String :> Post '[JSON] Bool
+      :<|> "evaluate" :> ReqBody '[JSON] String :> Post '[JSON] Float
+
+api :: Proxy API
+api = Proxy
+#+END_SRC
+
+
+In the beginning of the script I enable two language extensions. ~DataKinds~ language extensions promotes values to types. The same way as values have types, types have kinds.
+
+#+BEGIN_SRC haskell
+Prelude> :set -XDataKinds -- this is how you enable language extensions in ghci
+Prelude> :t 5
+5 :: Num p => p
+Prelude> :t (+)
+(+) :: Num a => a -> a -> a
+Prelude> :k Int
+Int :: *
+Prelude> :k Either
+Either :: * -> * -> *
+#+END_SRC
+
+~DataKinds~ allows us to use values as types and types as kinds (we still can use them as normal though).
+
+#+BEGIN_SRC haskell
+Prelude> :set -XDataKinds
+Prelude> data Response = Response
+Prelude> :t Response
+Response :: Response
+Prelude> :k 'Response
+'Response :: Response
+#+END_SRC
+
+~TypeOperators~ lets us define a type as an operator.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE TypeOperators #-}
+
+data path :> a
+data l :<|> r = l :<|> r
+#+END_SRC
+
+Notice that ~:>~ doesn't have any type constructors. This means that there are no values of this type, but we still can use this type operator for type-level computations.
+
+#+BEGIN_SRC haskell
+Prelude> :k (:>)
+(:>) :: * -> * -> *
+Prelude> data l :<|> r = l :<|> r
+Prelude> :t (:<|>)
+(:<|>) :: l -> r -> l :<|> r
+Prelude> :k (:<|>)
+(:<|>) :: * -> * -> *
+#+END_SRC
+
+These type operators are defined in a library called Servant, which I used to implement the server and the client. Using this library you can define your API in terms of types. Using these type operators and other types provided by Servant we can define the API. Here are the types that I used:
+- ~Post~ is a type that represents a post request. It takes a type-level list of content types (response formats, like JSON or XML) and the type of the response (this type must be in the type classes that convert values of this type to formats from the content type type-level list).
+- ~JSON~ is a content type. It doesn't have a constructor and it only exists for representing the content type at the type level.
+- ~ReqBody~ is a data type that takes a type-level list of content types (request formats that it can accept) and the type of the value that is encoded in one of the content types.
+
+So the type ~API~ represents this API:
+
+#+BEGIN_QUOTE
+POST: /check - takes a string in JSON format, returns a boolean in JSON format
+
+POST: /evaluate - takes a string in JSON format, returns a float in JSON format
+#+END_QUOTE
+
+In Haskell we can't pass types as arguments to functions, which is why we need ~Proxy~. Here is how it's defined:
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+
+data Proxy (t :: k) = Proxy
+#+END_SRC
+
+~KindSignatures~ extension enables explicit kind declarations and ~PolyKinds~ enables kind polymorphism.
+
+#+BEGIN_SRC haskell
+Prelude> data Proxy t = Proxy
+Prelude> :k Proxy
+Proxy :: * -> *
+Prelude> :set -XPolyKinds
+Prelude> :set -XKindSignatures 
+Prelude> data Proxy (t :: k) = Proxy
+Prelude> :k Proxy
+Proxy :: k -> *
+#+END_SRC
+
+This allows us to pass a value, which is always ~Proxy~, and pass a type by explicitly stating the type of the value that we pass.
+
+Now let's take a look at the implementation of the API.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators     #-}
+
+import           Data.Proxy
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Safe
+import           Servant
+
+import qualified Data.Text.IO             as TIO
+import qualified Lackey
+
+import qualified API
+
+infixl 6 :+:
+infixl 6 :-:
+infixl 7 :*:
+infixl 7 :/:
+
+data Expr a = Expr a :+: Expr a
+            | Expr a :-: Expr a
+            | Expr a :*: Expr a
+            | Expr a :/: Expr a
+            | Number a
+            deriving Show
+
+eval :: (Num a, Fractional a) => Expr a -> a
+eval (x :+: y)  = eval x + eval y
+eval (x :-: y)  = eval x - eval y
+eval (x :*: y)  = eval x * eval y
+eval (x :/: y)  = eval x / eval y
+eval (Number x) = x
+
+parse :: (Read a, Fractional a) => String -> Maybe (Expr a)
+parse = flip parseAccum [] . words
+  where parseAccum :: (Read a, Num a) => [String] -> [Expr a] -> Maybe (Expr a)
+        parseAccum []       [x]        = Just x
+        parseAccum ("+":cs) (x1:x2:xs) = parseAccum cs $ x1 :+: x2 : xs
+        parseAccum ("-":cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
+        parseAccum ("*":cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
+        parseAccum ("/":cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
+        parseAccum (str:cs) exprs      = readMay str >>= parseAccum cs . (: exprs) . Number
+        parseAccum _        _          = Nothing
+
+server :: Server API.API
+server = maybe (return False) (const $ return True) . parse
+    :<|> maybe invalid return . fmap eval . parse
+    where invalid = throwError err400 { errBody = "Invalid expression!" }
+
+app :: Application
+app = serve API.api server
+
+main :: IO ()
+main = run 3000 app
+#+END_SRC
+
+First I defined 4 operators which I then used as type constructors. ~infixl~ assigns priority to an operator. I used the same priority for ~:+:~, ~:-:~, ~:*:~, ~:/:~ as Haskell uses by default for ~+~, ~-~, ~*~, ~/~, respectively.
+
+Then I defined a data type (~Expr~) that represents a simple mathematical expression. It's a recursive data type and it's either a number or addition/subtraction/multiplication/division of two expressions. Function ~eval~ evaluates ~Expr~.
+
+~parse~ takes a string with an expression in reverse polish notation and parses it to get an expression of type ~Expr~. It uses several functions for that:
+
+#+BEGIN_SRC haskell
+flip :: (a -> b -> c) -> b -> a -> c -- defined in Prelude
+
+words :: String -> [String] -- defined in Prelude
+-- breaks a string up into a list of words, which were delimited by white space
+
+readMay :: Read a => String -> Maybe a -- defined in Safe (library `safe`)
+-- parses a string, returns Nothing if fails
+#+END_SRC
+
+To implement ~parse~ I wrote a simple local recursive function ~parseAccum~. It takes a list of strings with terms of the given expression in reverse polish notation and a list of expressions of type ~Expr a~, which is used as a stack. If the list of strings is empty and there is only one element in the stack then it means that we successfully parsed the given expression, so ~parseAccum~ just returns the expression from the stack. If the current element of the list of strings is an operator then ~parseAccum~ takes two top elements from the stack, constructs a new expression with the given operator, puts the new expression in the stack, and recursively calls ~parseAccum~ on the rest of the list and the new stack. If the current element of the list is not an operator then it must be a number, so ~parseAccum~ attempts to read a number from the list and if it succeeds then it puts the number into the stack and calls ~parseAccum~ on the rest of the list and the new stack. In any other case it returns Nothing.
+
+~server~ is the implementation of ~API~. ~Server~ is a type family, which is like a type-level function. This way it can figure out what type the implementation of the API should have for any ~API~ type. The API I defined has two endpoints, both of which take data from request body, which is why the actual type is
+
+#+BEGIN_SRC haskell
+server :: ([Char] -> Handler Bool) :<|> ([Char] -> Handler Float)
+#+END_SRC
+
+~Handler~ is a monad from Servant. In this case I don't have any impure computations in the implementation of the server, so I just used ~return~ to get the result that matches the type definition. The implementations for /check and /evaluate are separated by ~:<|>~. The function for /check attempts to parse the given expression and then converts ~Maybe (Expr Double)~ (unspecified arbitrary numbers from ~Fractional~ default to ~Double~) to ~Handler Bool~ using functions ~maybe~, ~const~, and ~return~. The function for /evaluate takes an expression, attempts to parse it, evaluates it and returns in the right type if ~parse~ didn't return ~Nothing~, otherwise it sends a response with HTTP error 400 (Bad request) and message "Invalid expression!".
+
+~app~ converts the API type and the implementation of the API to ~Application~, which is a type defined in ~Network.Wai~ (from library ~wai~ - web application interface). We need to do this because Servant doesn't provide any functions for running the server, it allows you to plug your Servant code into different web servers. WAI provides a common protocol for communication between web applications and web servers. Now that we have a WAI web application we can run it using ~run~ function from ~Network.Wai.Handler.Warp~ (from library ~warp~), which is a web server for WAI applications. ~main~ IO action runs the application on port 3000.
+
+*** Ruby
+
+#+BEGIN_SRC bash
+$ rails new ruby --api
+$ rails generate controller Main
+#+END_SRC
+
+#+BEGIN_SRC ruby
+post '/:action(/:id)', controller: 'main' # routes.rb
+#+END_SRC
+
+#+BEGIN_SRC ruby
+  exprs.unshift Expr.new '+', exprs.shift, exprs.shift
+when '-'
+  epxrs.unshift Expr.new '-', exprs.shift, epxrs.shift
+when '*'
+  exprs.unshift Expr.new '*', epxrs.shift, exprs.shift
+when '/'
+  epxrs.unshift Expr.new '/', exprs.shift, exprs.shift
+
+# what's the problem with this code???
+#+END_SRC
+
 * Conclusion
 ** Safety
 
@@ -1608,4 +1805,6 @@ Using Haskell you can avoid almost all run-time errors. For example, if you have
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
-[[ https://wiki.haskell.org/Why_Haskell_matters]]
+[[https://wiki.haskell.org/Why_Haskell_matters]]
+
+[[https://stackoverflow.com/questions/13190314/io-happens-out-of-order-when-using-getline-and-putstr]]
