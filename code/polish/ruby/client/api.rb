@@ -1,0 +1,1 @@
+def post_check(excon,body)excon.request(:method=>:post,:path=>"/check",:headers=>{'Content-Type' => 'application/json'},:body=>body)end;def post_evaluate(excon,body)excon.request(:method=>:post,:path=>"/evaluate",:headers=>{'Content-Type' => 'application/json'},:body=>body)end
