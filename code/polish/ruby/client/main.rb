@@ -1,5 +1,5 @@
-require 'excon'
-require 'json'
+require 'excon' # library for HTTP
+require 'json'  # library for JSON
 
 require './api.rb'
 
@@ -8,6 +8,7 @@ expr = JSON.generate gets.chomp
 print 'Action (Check or Evaluate): '
 action = gets.chomp
 
+# create new instance of Excon
 excon = Excon.new('http://localhost:3000')
 
 case action
