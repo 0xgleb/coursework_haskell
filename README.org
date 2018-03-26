@@ -32,7 +32,8 @@ The purpose of this project is to investigate how Haskell works and how its feat
 
 When we pick a programming language for a project we want it to have several features that will make the process of building the project faster and easier. In this investigation project I will identify the most important features that a general purpose high-level programming language should have and show how Haskell implements them. First, let's identify the main features that make high-level programming languages different from the low-level ones.
 
-** Safety
+** Goal
+*** Safety
 
 Usually programmers spend a lot of time finding and fixing bugs, which is a huge problem because for businesses it's crucial to deliver code as fast as possible. But what's an even bigger problem is programs crashing in production. This can cause businesses to lose a lot money or, in the worst cases, shut down. So we want programming languages to prevent as many bugs as possible.
 
@@ -40,31 +41,25 @@ A lot of run-time issues happen because of state changes. In most languages vari
 
 Here are some examples of methods that we can use to solve this problem: type systems, automated tests, code checkers. Let's take a look at every one of these approaches. Not all languages have type systems, but even the ones that do usually allow dangerous actions like implicit casting. Automated tests are great and they help a lot, but it's hard to test every single thing, especially if the part of the code that you are testing depends on the state. Non-standard code checkers can help, but often they can't prevent even simple run-time errors.
 
-** Expressiveness
+*** Expressiveness
 
 We want to write the least amount of code possible. At the same time we want the code to be readable and elegant. As I mentioned above the development speed is very important and it reduces if we can quickly express ideas without writing too much code.
 
-To solve this problem most languages just create special syntax for common things, for example instead of just having while loops they also support for loops. This can help, but this approach has a big problem - it clutters up the language.
+To solve this problem most languages just create special syntax for common things, for example instead of just having while loops they also support for loops. This can help, but this approach has two problems: it clutters up the language and it doesn't solve the problem generally, this approach only adds hacks for common specific things.
 
-** High level abstractions
+*** High level abstractions
 
-To write programs as fast as possible we want to describe our ideas without thinking about every single operation that happens inside the computer.
+High-level languages allow developers to think just about solving the business problem and minimize the amount of the code that specifies what exactly happens inside the computer. There are two areas that are fundamental in programming - resource management and sequencing. Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main idea of imperative programming is to allow programmers to write a sequence of instructions that computer will execute. The only thing imperative languages can do to abstract sequencing is introducing new keywords and libraries, thus cluttering the language.
 
-There are two areas that are fundamental in programming - resource management and sequencing. Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main idea of imperative programming is to allow programmers to write a sequence of instructions that computer will execute. The only thing imperative languages can do to abstract sequencing is introducing new keywords and libraries, thus cluttering the language.
+We also want to be able to work with complex abstractions and general versions of different types. For example if the only important aspect of a data structure is that it can be parsed from a string then we don't want to work with a specific type, we want to use the most general case possible. Also this helps avoiding errors.
 
-** Modularity
+*** Modularity
 
-We want to reuse as much code as possible. We also should be able to easily compose different parts of a program together.
+We want to reuse as much code as possible. We also should be able to easily compose different parts of a program together. This is one of the main concepts of programming.
 
-** Performance
+*** Performance
 
-Depending on what we are developing we have different performance requirements, so we want programming languages to help us make efficient programs.
-
-# ** Easy refactoring
-
-# In real world projects it's impossible to write a piece of code once and then never change it. This is why we want to be able to change existing code and to add new features without breaking anything.
-
-# Automated tests can help a lot with this problem too, but they have mentioned above problems.
+Depending on what we are developing we have different performance requirements, so we want programming languages to help us make efficient programs. Of course using a high-level language for writing low-level applications like drivers is usually a bad idea, but high-level languages should work as fast as possible without loosing benefits of high-level languages.
 
 ** How Haskell works
 *** Hello World and more.
@@ -1107,35 +1102,34 @@ headOfHead l = do h <- headMay l
 
 # (Reference: How lazy evaluation works in Haskell) ((I'll do the references later))
 
+** Spec for the examples
+
+To show that Haskell is better than other high-level programming languages I will solve several problems in Haskell and Ruby. Ruby is a high-level programming language, and it is almost the exact opposite of Haskell: it's imperative (although it supports some features from functional programming, as Haskell is one of the languages that Ruby was inspired by, I will avoid using them to show more differences between imperative and functional programming), dynamically typed, interpreted, and object oriented.
+
+*** Example 1: sorting a big file
+
+In this example I will write a script that reads numbers from a file, sorts them, and writes the sorted list to another file. Even though this investigation is about high-level languages, I decided to include a solution to this problem in a low-level language C. I did this to make a more representative performance comparison.
+
+*** Example 2: reverse polish server
+
+In this example I will implement a client-server system. The client takes an expression in reverse polish notation and an action (check or evaluate), then the expression gets sent to the server where the required action gets executed, finally the client shows the result of performing the given action on the given expression.
+
+The main purpose of this example is to show Haskell's safety, expressiveness, high-level abstractions, and modularity.
+
 * Design
-
-To compare Haskell to another high-level language (Ruby) in terms of the identified in analysis parameters of high-level languages I wrote several scripts.
-
 ** Sorting a big file
 
-I chose this problem to compare performance of two high-level languages (Haskell and Ruby) and a low-level language (C). Even though this investigation is about high-level languages I've decided to include a C version of the script just to compare performance of high-level languages to low-level languages. Here is the algorithm that the scripts need to implement:
-
-#+BEGIN_QUOTE
-We want to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file \texttt{"\{language name\}\_result"}.
-#+END_QUOTE
-
-Although the main purpose of this problem is to compare performance it also relates to the other criteria.
+The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
 ** Reverse polish server
 
-This problem focuses mostly on safety, high-level abstractions and expressiveness of high-level languages. Here is the algorithm that the scripts need to implement:
+In the script there needs be a data type that represents a simple mathematical expression (in terms of numbers and operators ~+~, ~-~, ~*~, ~/~). For this data type a function that evaluates the expression must be defined. If the function is called on a number then this number gets returned, if the function is called on an expression then the function gets recursively called on the operands and the current operator is applied to the two results.
 
-#+BEGIN_QUOTE
-We want to have a web server that has the following API endpoints:
+There must be a function that takes a string and reads the expression in reverse polish notation that is stored in it. The function returns a nullable expression of the expression type. The function uses a stack of expressions. When it sees an operator in the input it takes two expressions from the stack and constructs a new expression with the operator it read as the operator and the two expressions as the operands and puts the new expression in the stack. The function treats the rest of the input as numbers delimited by spaces. After the function finishes going through the entire input string if there is only one element in the stack then it returns it, otherwise it return a null value because the expression is invalid.
 
-POST: /check - extracts an expression in reverse polish notation and returns a response with code 200 and response body "valid" if the expression is valid or an response with error code 400 and error message "invalid" if the expression is invalid.
-
-POST: /evaluate - extracts an expression in reverse polish notation and returns a response with code 200 and response body containing the result of evaluating the expression if the expression is valid, otherwise returns a response with error code 400 and error message "invalid".
-
-We also want a client side that reads an expression in reverse polish notation from command line and then let's use pick an action: check or evaluate. If the use picks check then the script sends a /check request to the server and prints the result. If the user picks evaluate then the script sends an /evaluate request and prints the result.
-#+END_QUOTE
-
-This way I will show how high-level abstractions and types can be used for defining REST APIs and what the benefits of doing so.
+These functions are then used to implement the following API endpoints:
+- POST: /check - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with a boolean in JSON format. If the given expression is valid then the server responds with ~true~, if the given expression is invalid then the server responds with ~false~.
+- POST: /evaluate - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with code 200 and response body containing the result of evaluating the expression if the expression is valid, otherwise returns a response with error code 400 (Bad Request) and error message "invalid".
 
 * Solution
 
