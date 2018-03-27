@@ -1136,9 +1136,8 @@ These functions are then used to implement the following API endpoints:
 Now I will solve several problems in Haskell as well as C and Ruby to compare the parameters of programming languages identified in analysis.
 
 ** Sorting a big file
-*** The code
-
-In this example I will discuss a Haskell script that I wrote. It reads comma-separated numbers from a file, sorts them, and writes into another file using the same format.
+*** Code
+**** Haskell
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1261,70 +1260,14 @@ maybe (print "Failed to parse!")
 
 If we put all these things together we'll get ~main~. In summary, it reads numbers from \texttt{"random\_numbers"}, splits the string with comma separated integers into a list of byte strings with integers, then parses each integer, prints "Failed to parse!" in case it fails to parse, otherwise sorts the list of integers, converts each integer back into a byte string, joins the byte strings and writes the result to \texttt{"haskell\_result"}.
 
-Then I wrote a script that generates a list of random numbers in range $[1,1000]$ and writes them to a file separated by commas.
-
-#+BEGIN_SRC haskell
-import Control.Monad
-import System.Random
-
-numOfNums :: Integer
-numOfNums = 10
-
-file :: FilePath
-file = "random_numbers"
-
-main :: IO ()
-main =  join
-     $  (\(r:rs) -> foldl (\p x -> p >> addToFile (',' : show x)) (writeFile file $ show r) rs)
-    <$> foldl (\rs _ -> (:) <$> (randomRIO (1, 1000) :: IO Int) <*> rs) (return []) [1..numOfNums]
-     where addToFile = appendFile file
-#+END_SRC
-
-Let's test the code:
-
-[[./img/sort_test_haskell.png]]
-
-*** Safety
-
-Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so.
-
-*** Expressiveness
-
-As you can see we didn't need a lot of code to solve the problem. Let's describe the algorithm in English.
-
-#+BEGIN_QUOTE
-We want to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file \texttt{"haskell\_result"}.
-#+END_QUOTE
-
-And the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
-
-#+BEGIN_SRC haskell
-{-# LANGUAGE OverloadedStrings #-}
-
-import qualified Data.ByteString.Lazy.Char8 as C
-import Data.List (sort)
-
-main :: IO ()
-main = C.readFile "random_numbers" -- we want to read the file "random_numbers"
-   >>= maybe (print "Failed to parse!")
-             ( C.writeFile "haskell_result" -- write the result to the file "haskell_result"
-             . C.intercalate "," . fmap (C.pack . show) -- convert back to the original format
-             . sort -- sort them
-             . fmap fst ) . traverse C.readInt . C.split ',' -- parse comma-separated integers
-#+END_SRC
-
-Let's compare this to an imperative solution of the problem in Ruby.
+**** Ruby
 
 #+BEGIN_SRC ruby
-
 input_file_name = 'random_numbers'
 output_file_name = 'ruby_result'
 
-
 buffer = ''
 numbers = []
-
-
 
 # open the input file
 File.open(input_file_name) do |f|
@@ -1359,34 +1302,7 @@ File.open(output_file_name, 'w') do |f|
 end
 #+END_SRC
 
-Here, as you can see, the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
-
-*** Modularity
-
-This script also shows how modular Haskell is. To solve the problem I just glue together 13 different functions using 2 operators. If we want to reuse some of the functionality we can easily extract the piece of code that does what we want from ~main~ and put it in another function. For example, let's say we want to reuse the code for parsing.
-
-#+BEGIN_SRC haskell
-{-# LANGUAGE OverloadedStrings #-}
-
-import qualified Data.ByteString.Lazy.Char8 as C
-import           Data.List                  (sort)
-
-parse :: C.ByteString -> Maybe [Int]
-parse = fmap (fmap fst) . traverse C.readInt . C.split ','
-
-main :: IO ()
-main = C.readFile "random_numbers"
-   >>= maybe (print "Failed to parse!")
-             ( C.writeFile "haskell_result"
-             . C.intercalate "," . fmap (C.pack . show) . sort
-             ) . parse
-#+END_SRC
-
-As you can see, in Haskell it's very easy to compose and decompose code.
-
-*** Performance
-
-I solved the problem in C, so that I can compare the performance of C, Haskell, and Ruby.
+**** C
 
 #+BEGIN_SRC c
 #define SIZE (1000000)
@@ -1472,6 +1388,94 @@ int main()
 }
 #+END_SRC
 
+*** Tests
+
+I wrote a script that generates a list of random numbers in range $[1,1000]$ and writes them to a file separated by commas to test the sorting script.
+
+#+BEGIN_SRC haskell
+import Control.Monad
+import System.Random
+
+numOfNums :: Integer
+numOfNums = 10
+
+file :: FilePath
+file = "random_numbers"
+
+main :: IO ()
+main =  join
+     $  (\(r:rs) -> foldl (\p x -> p >> addToFile (',' : show x)) (writeFile file $ show r) rs)
+    <$> foldl (\rs _ -> (:) <$> (randomRIO (1, 1000) :: IO Int) <*> rs) (return []) [1..numOfNums]
+     where addToFile = appendFile file
+#+END_SRC
+
+I changed ~SIZE~ macro in the C script to ~10~ for the purpose of the test.
+
+[[./img/sort_test.png]]
+
+*** Evaluation
+**** Safety
+
+Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so.
+
+**** Expressiveness
+
+As you can see we didn't need a lot of code to solve the problem. Let's describe the algorithm in English.
+
+#+BEGIN_QUOTE
+We want to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file \texttt{"haskell\_result"}.
+#+END_QUOTE
+
+And the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE OverloadedStrings #-}
+
+import qualified Data.ByteString.Lazy.Char8 as C
+import Data.List (sort)
+
+main :: IO ()
+main = C.readFile "random_numbers" -- we want to read the file "random_numbers"
+   >>= maybe (print "Failed to parse!")
+             ( C.writeFile "haskell_result" -- write the result to the file "haskell_result"
+             . C.intercalate "," . fmap (C.pack . show) -- convert back to the original format
+             . sort -- sort them
+             . fmap fst ) . traverse C.readInt . C.split ',' -- parse comma-separated integers
+#+END_SRC
+
+Let's compare this to an imperative solution of the problem in Ruby.
+
+
+Here, as you can see, the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
+
+**** Modularity
+
+This script also shows how modular Haskell is. To solve the problem I just glue together 13 different functions using 2 operators. If we want to reuse some of the functionality we can easily extract the piece of code that does what we want from ~main~ and put it in another function. For example, let's say we want to reuse the code for parsing.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE OverloadedStrings #-}
+
+import qualified Data.ByteString.Lazy.Char8 as C
+import           Data.List                  (sort)
+
+parse :: C.ByteString -> Maybe [Int]
+parse = fmap (fmap fst) . traverse C.readInt . C.split ','
+
+main :: IO ()
+main = C.readFile "random_numbers"
+   >>= maybe (print "Failed to parse!")
+             ( C.writeFile "haskell_result"
+             . C.intercalate "," . fmap (C.pack . show) . sort
+             ) . parse
+#+END_SRC
+
+As you can see, in Haskell it's very easy to compose and decompose code.
+
+**** Performance
+
+I solved the problem in C, so that I can compare the performance of C, Haskell, and Ruby.
+
+
 [[./img/sort_performance.png]]
 
 As you can see Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast, lists are not very fast, we need to allocate memory very often.
@@ -1496,7 +1500,7 @@ main = C.readFile "random_numbers"
              ) . traverse C.readInt . C.split ','
 #+END_SRC
 
-**** Unboxed vectors
+***** Unboxed vectors
 
 ~vector~ library provides efficient arrays. Unboxed types are raw values. So boxed (default) vectors are arrays of pointers and unboxed vectors are arrays of raw values.
 
@@ -1507,7 +1511,7 @@ U.toList :: U.Unbox a => U.Vector a -> [a]
 
 As you can guess from the names and types ~U.fromList~ converts a list of values that can be represented as raw values to an unboxed vector and ~U.toList~ converts an unboxed vector to a list.
 
-**** Introsort
+***** Introsort
 
 Introspective sorting or introsort is an optimised version of quicksort. From the description of the module ~Data.Vector.Algorithms.Intro~:
 
@@ -1521,7 +1525,7 @@ Introsort is at its core a quicksort. The version implemented here has the follo
 - The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
 #+END_QUOTE
 
-**** Safe internal mutations
+***** Safe internal mutations
 
 Let's take a look at types of ~U.modify~ and ~Alg.sort~.
 
@@ -1559,18 +1563,19 @@ Alg.sort
 U.modify Alg.sort :: (Ord a, U.Unbox a) => U.Vector a -> U.Vector a
 #+END_SRC
 
-**** The result of the optimizations
+***** The result of the optimizations
 
 [[./img/optimised_haskell_sort.png]]
 
 As you can see this significantly improved performance. If this still isn't fast enough for you, there are other optimizations that can be done: you can use the foreign function interface to call C functions, reduce the number of different conversions in the script, completely get rid of lists, etc.
 
-*** Abstractions
+**** Abstractions
 
 This example also shows what Haskell's high level abstractions can do. The part from this example that I particularly enjoy is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. It is very strict and it forces you to write code that exactly matches all the types, unlike many languages it doesn't do implicit type casting. At the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
 
 ** Reverse Polish server
 *** The code
+**** Haskell
 
 To implement the server I created two files: one for the API and one for the implementation of the API. First I defined the API:
 
@@ -1762,7 +1767,7 @@ server :: ([Char] -> Handler Bool) :<|> ([Char] -> Handler Float)
 
 ~app~ converts the API type and the implementation of the API to ~Application~, which is a type defined in ~Network.Wai~ (from library ~wai~ - web application interface). We need to do this because Servant doesn't provide any functions for running the server, it allows you to plug your Servant code into different web servers. WAI provides a common protocol for communication between web applications and web servers. Now that we have a WAI web application we can run it using ~run~ function from ~Network.Wai.Handler.Warp~ (from library ~warp~), which is a web server for WAI applications. ~main~ IO action runs the application on port 3000.
 
-*** Ruby
+**** Ruby
 
 For the Ruby version of the server I used a popular framework for developing web application called Ruby on Rails. I generated a new rails project and a new controller. Rails uses MVC (model, view, controller) model. Models are used for working with data, views render data, and controllers have the logic of the application.
 

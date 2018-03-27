@@ -1,4 +1,4 @@
-#define SIZE (1000000)
+#define SIZE (10)
 #define INPUT_FILE ("random_numbers")
 #define OUTPUT_FILE ("c_result")
 
