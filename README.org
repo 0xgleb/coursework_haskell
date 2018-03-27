@@ -1118,6 +1118,9 @@ The main purpose of this example is to show Haskell's safety, expressiveness, hi
 
 * Design
 ** Sorting a big file
+:PROPERTIES:
+:CUSTOM_ID: sorting-design
+:END:
 
 The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
@@ -1139,6 +1142,7 @@ Now I will solve several problems in Haskell as well as C and Ruby to compare th
 *** Code
 **** Haskell
 
+#+NAME: code:haskell_sort
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -1420,13 +1424,7 @@ Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteStr
 
 **** Expressiveness
 
-As you can see we didn't need a lot of code to solve the problem. Let's describe the algorithm in English.
-
-#+BEGIN_QUOTE
-We want to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file \texttt{"haskell\_result"}.
-#+END_QUOTE
-
-And the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
+As you can see we didn't need a lot of code to solve the problem. If you take a look at the way the algorithm was described in English in [[sorting-design]] you'll see that the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1435,7 +1433,7 @@ import qualified Data.ByteString.Lazy.Char8 as C
 import Data.List (sort)
 
 main :: IO ()
-main = C.readFile "random_numbers" -- we want to read the file "random_numbers"
+main = C.readFile "random_numbers" -- read the file "random_numbers"
    >>= maybe (print "Failed to parse!")
              ( C.writeFile "haskell_result" -- write the result to the file "haskell_result"
              . C.intercalate "," . fmap (C.pack . show) -- convert back to the original format
