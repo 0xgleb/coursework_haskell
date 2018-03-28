@@ -2159,3 +2159,5 @@ Using Haskell you can avoid almost all run-time errors. For example, if you have
 [[https://wiki.haskell.org/Why_Haskell_matters]]
 
 [[https://stackoverflow.com/questions/13190314/io-happens-out-of-order-when-using-getline-and-putstr]]
+
+[[https://github.com/Gabriel439/post-rfc/blob/master/sotu.md]]
