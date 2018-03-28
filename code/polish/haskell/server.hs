@@ -40,7 +40,7 @@ parse = flip parseAccum [] . words
         parseAccum ("-":cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
         parseAccum ("*":cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
         parseAccum ("/":cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
-        parseAccum (str:cs) exprs = readMay str >>= parseAccum cs . (: exprs) . Number
+        parseAccum (str:cs) exprs      = readMay str >>= parseAccum cs . (: exprs) . Number
         parseAccum _        _          = Nothing
 
 server :: Server API.API
