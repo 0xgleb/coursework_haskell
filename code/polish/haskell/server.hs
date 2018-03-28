@@ -18,11 +18,11 @@ infixl 6 :-:
 infixl 7 :*:
 infixl 7 :/:
 
-data Expr a = Expr a :+: Expr a
-            | Expr a :-: Expr a
-            | Expr a :*: Expr a
-            | Expr a :/: Expr a
-            | Number a
+data Expr a = !(Expr a) :+: !(Expr a)
+            | !(Expr a) :-: !(Expr a)
+            | !(Expr a) :*: !(Expr a)
+            | !(Expr a) :/: !(Expr a)
+            | Number !a
             deriving Show
 
 eval :: (Num a, Fractional a) => Expr a -> a
