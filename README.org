@@ -2204,6 +2204,11 @@ flip :: (a -> b -> c) -> b -> a -> c
 All these examples show how Haskell's type system and immutability make your code safer.
 
 ** Expressiveness
+
+Haskell types not only make code safer, but they also make it more readable. Type signature significantly reduces the number of possible implementations of the function, so if you know the name and the type of a function then more often than not you can tell what the function does without looking at the implementation. This helps a lot when you are working in a team and you want to use a function written by another person. It also makes it easier to use libraries. By defining types using ~newtype~ and ~type~ you can make it even easier to understand what functions do without using any more data at run time.
+
+As you saw in the examples, Haskell usually requires less code to solve a problem. The reason for this is the minimalist syntax and features like partial application, pattern matching, custom operators, etc. Also, in both cases the code was close to the description of the problem in English. This shows that Haskell is a very expressive language.
+
 ** High level abstractions
 ** Modularity
 ** Performance
