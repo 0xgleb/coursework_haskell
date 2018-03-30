@@ -1108,19 +1108,17 @@ To show that Haskell is better than other high-level programming languages I wil
 
 *** Example 1: sorting a big file
 
-In this example I will write a script that reads numbers from a file, sorts them, and writes the sorted list to another file. Even though this investigation is about high-level languages, I decided to include a solution to this problem in a low-level language C. I did this to make a more representative performance comparison.
+In this example I will write a script that reads numbers from a file, sorts them, and writes the sorted list to another file. Even though this investigation is about high-level languages, I decided to include a solution to this problem in a low-level language C. I did this to make a more representative performance comparison. In order to show this I will measure time taken for each of the scripts to process a file with one million random integers.
 
 *** Example 2: reverse polish server
 
 In this example I will implement a client-server system. The client takes an expression in reverse polish notation and an action (check or evaluate), then the expression gets sent to the server where the required action gets executed, finally the client shows the result of performing the given action on the given expression.
 
-The main purpose of this example is to show Haskell's safety, expressiveness, high-level abstractions, and modularity.
+By comparing methods for defining and implementing an API this example is to show Haskell's safety, expressiveness, high-level abstractions, and modularity.
 
 * Design
 ** Sorting a big file
-:PROPERTIES:
-:CUSTOM_ID: sorting-design
-:END:
+<<sec:design_sorting>>
 
 The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
@@ -1135,9 +1133,6 @@ These functions are then used to implement the following API endpoints:
 - POST: /evaluate - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with code 200 and response body containing the result of evaluating the expression if the expression is valid, otherwise returns a response with error code 400 (Bad Request) and error message "invalid".
 
 * Solution
-
-Now I will solve several problems in Haskell as well as C and Ruby to compare the parameters of programming languages identified in analysis.
-
 ** Sorting a big file
 *** Code
 **** Haskell
@@ -1265,6 +1260,7 @@ maybe (print "Failed to parse!")
 If we put all these things together we'll get ~main~. In summary, it reads numbers from \texttt{"random\_numbers"}, splits the string with comma separated integers into a list of byte strings with integers, then parses each integer, prints "Failed to parse!" in case it fails to parse, otherwise sorts the list of integers, converts each integer back into a byte string, joins the byte strings and writes the result to \texttt{"haskell\_result"}.
 
 **** Ruby
+<<sec:ruby_sorting_code>>
 
 #+BEGIN_SRC ruby
 input_file_name = 'random_numbers'
@@ -1420,11 +1416,11 @@ I changed ~SIZE~ macro in the C script to ~10~ for the purpose of the test.
 *** Evaluation
 **** Safety
 
-Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so.
+Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so. This shows how Haskell is a safer language.
 
 **** Expressiveness
 
-As you can see we didn't need a lot of code to solve the problem. If you take a look at the way the algorithm was described in English in [[sorting-design]] you'll see that the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
+As you can see we didn't need a lot of code to solve the problem. If you take a look at the way the algorithm was described in English in [[sec:design_sorting]] you'll see that the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1441,10 +1437,7 @@ main = C.readFile "random_numbers" -- read the file "random_numbers"
              . fmap fst ) . traverse C.readInt . C.split ',' -- parse comma-separated integers
 #+END_SRC
 
-Let's compare this to an imperative solution of the problem in Ruby.
-
-
-Here, as you can see, the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
+In the Ruby solution, as you can see in [[sec:ruby_sorting_code]], the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
 
 **** Modularity
 
@@ -1471,8 +1464,7 @@ As you can see, in Haskell it's very easy to compose and decompose code.
 
 **** Performance
 
-I solved the problem in C, so that I can compare the performance of C, Haskell, and Ruby.
-
+To test performance I generated a file with one million random numbers (I changed macro ~SIZE~ in the C script back to a million) and measured the execution time.
 
 [[./img/sort_performance.png]]
 
@@ -1565,11 +1557,11 @@ U.modify Alg.sort :: (Ord a, U.Unbox a) => U.Vector a -> U.Vector a
 
 [[./img/optimised_haskell_sort.png]]
 
-As you can see this significantly improved performance. If this still isn't fast enough for you, there are other optimizations that can be done: you can use the foreign function interface to call C functions, reduce the number of different conversions in the script, completely get rid of lists, etc.
+As you can see this significantly improved performance. If this still isn't fast enough for you, there are other optimizations that can be done: you can use the foreign function interface to call C functions, reduce the number of different conversions in the script, completely get rid of lists, etc. This shows that Haskell can have decent performance. Depending on what application you're developing you can optimize Haskell to get the performance you need. It's still slower than low-level languages like C, but if you really need certain parts of your code to perform really well then you can use foreign function interface and call C code from Haskell.
 
 **** Abstractions
 
-This example also shows what Haskell's high level abstractions can do. The part from this example that I particularly enjoy is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. It is very strict and it forces you to write code that exactly matches all the types, unlike many languages it doesn't do implicit type casting. At the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
+This example also shows what Haskell's high level abstractions can do. The part from the optimized solution that I particularly enjoy is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. It is very strict and it forces you to write code that exactly matches all the types, unlike many languages it doesn't do implicit type casting. At the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
 
 ** Reverse Polish server
 *** The code
