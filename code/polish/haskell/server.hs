@@ -53,6 +53,3 @@ app = serve API.api server
 
 main :: IO ()
 main = run 3000 app
-
-rubyClient :: FilePath -> IO ()
-rubyClient file = TIO.writeFile file $ Lackey.rubyForAPI API.api
