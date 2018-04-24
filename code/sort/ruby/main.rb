@@ -6,6 +6,7 @@ numbers = []
 
 # open the input file
 File.open(input_file_name) do |f|
+  begin
   # for each character c in the file
   f.each_char do |c|
     if c == ','
@@ -21,6 +22,10 @@ File.open(input_file_name) do |f|
 
   # convert the buffer to an integer and add to the list of numbers
   numbers << Integer(buffer)
+  rescue(ArgumentError)
+    puts 'Failed to parse!'
+    exit
+  end
 end
 
 # sort the numbers
