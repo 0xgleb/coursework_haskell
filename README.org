@@ -1123,6 +1123,7 @@ By comparing methods for defining and implementing an API this example is to sho
 The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
 ** Reverse polish server
+<<sec:design_reverse_polish>>
 
 In the script there needs be a data type that represents a simple mathematical expression (in terms of numbers and operators ~+~, ~-~, ~*~, ~/~). For this data type a function that evaluates the expression must be defined. If the function is called on a number then this number gets returned, if the function is called on an expression then the function gets recursively called on the operands and the current operator is applied to the two results.
 
@@ -1437,7 +1438,7 @@ main = C.readFile "random_numbers" -- read the file "random_numbers"
              . fmap fst ) . traverse C.readInt . C.split ',' -- parse comma-separated integers
 #+END_SRC
 
-In the Ruby solution, as you can see in [[sec:ruby_sorting_code]], the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
+In the Ruby solution, as you can see in the source code, the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
 
 **** Modularity
 
@@ -1561,11 +1562,12 @@ As you can see this significantly improved performance. If this still isn't fast
 
 **** Abstractions
 
-This example also shows what Haskell's high level abstractions can do. The part from the optimized solution that I particularly enjoy is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. It is very strict and it forces you to write code that exactly matches all the types, unlike many languages it doesn't do implicit type casting. At the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
+This example also shows what Haskell's high level abstractions can do. A good example of the language's use of high-level abstractions from the optimized version of the script is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. Haskell's type system is very strict, but at the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
 
 ** Reverse Polish server
-*** The code
+*** Code
 **** Haskell
+***** Server
 
 To implement the server I created two files: one for the API and one for the implementation of the API. First I defined the API:
 
@@ -1600,7 +1602,7 @@ Prelude> :k Either
 Either :: * -> * -> *
 #+END_SRC
 
-~DataKinds~ allows us to use values as types and types as kinds (we still can use them as normal though).
+~DataKinds~ allows us to use values as types and types as kinds (we still can use them the regular way though).
 
 #+BEGIN_SRC haskell
 Prelude> :set -XDataKinds
@@ -1620,7 +1622,7 @@ data path :> a
 data l :<|> r = l :<|> r
 #+END_SRC
 
-Notice that ~:>~ doesn't have any type constructors. This means that there are no values of this type, but we still can use this type operator for type-level computations.
+Notice that ~:>~ doesn't have any type constructors. This means that there are no values of this type, but we can still use this type operator for type-level computations.
 
 #+BEGIN_SRC haskell
 Prelude> :k (:>)
@@ -1637,15 +1639,11 @@ These type operators are defined in a library called Servant, which I used to im
 - ~JSON~ is a content type. It doesn't have a constructor and it only exists for representing the content type at the type level.
 - ~ReqBody~ is a data type that takes a type-level list of content types (request formats that it can accept) and the type of the value that is encoded in one of the content types.
 
-So the type ~API~ represents this API:
+So the type ~API~ represents the API defined in the design section ([[sec:design_reverse_polish]]).
+- POST: /check - takes a string in JSON format, returns a boolean in JSON format
+- POST: /evaluate - takes a string in JSON format, returns a float in JSON format
 
-#+BEGIN_QUOTE
-POST: /check - takes a string in JSON format, returns a boolean in JSON format
-
-POST: /evaluate - takes a string in JSON format, returns a float in JSON format
-#+END_QUOTE
-
-In Haskell we can't pass types as arguments to functions, which is why we need ~Proxy~. Here is how it's defined:
+Of course this type only defines the endpoints, the actual server logic goes into the implementation. ~API~ is a type and sometimes we need to use the API definition as a value. In Haskell we can't pass types as arguments to functions, which is why we need ~Proxy~. Here is how it's defined:
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE KindSignatures #-}
@@ -1714,7 +1712,7 @@ parse = flip parseAccum [] . words
         parseAccum ("-":cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
         parseAccum ("*":cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
         parseAccum ("/":cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
-        parseAccum (str:cs) exprs      = readMay str >>= parseAccum cs . (: exprs) . Number
+        parseAccum (str:cs) exprs = readMay str >>= parseAccum cs . (: exprs) . Number
         parseAccum _        _          = Nothing
 
 server :: Server API.API
@@ -1757,7 +1755,83 @@ server :: ([Char] -> Handler Bool) :<|> ([Char] -> Handler Float)
 
 ~app~ converts the API type and the implementation of the API to ~Application~, which is a type defined in ~Network.Wai~ (from library ~wai~ - web application interface). We need to do this because Servant doesn't provide any functions for running the server, it allows you to plug your Servant code into different web servers. WAI provides a common protocol for communication between web applications and web servers. Now that we have a WAI web application we can run it using ~run~ function from ~Network.Wai.Handler.Warp~ (from library ~warp~), which is a web server for WAI applications. ~main~ IO action runs the application on port 3000.
 
+***** Client
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
+
+import           Data.Proxy
+import           Network.HTTP.Client
+import           Safe
+import           Servant.API
+import           Servant.Client      as SC
+import           System.IO
+
+import           API                 (api)
+
+check :: String -> ClientM Bool
+evaluate :: String -> ClientM Float
+
+check :<|> evaluate = client api
+
+baseUrl :: BaseUrl
+baseUrl = BaseUrl Http "localhost" 3000 ""
+
+data Action = Check | Evaluate deriving (Show, Read)
+
+printResponse :: Show b => Either ServantError b -> IO ()
+printResponse = either (putStrLn . ("Error: " ++) . show . SC.responseBody) print
+
+performAction :: String -> Action -> IO ()
+performAction expr action =
+  let manager = flip ClientEnv baseUrl <$> newManager defaultManagerSettings
+  in manager >>= \m -> case action of
+                         Check    -> printResponse =<< runClientM (check expr) m
+                         Evaluate -> printResponse =<< runClientM (evaluate expr) m
+
+main :: IO ()
+main = do expr <- prompt "Expression: "
+          action <- prompt "Action (Check or Evaluate): "
+          maybe (print "Invalid action!") (performAction expr) $ readMay action
+          where prompt str = putStr str >> hFlush stdout >> getLine
+#+END_SRC
+
+Using Servant you can generate documentation and client side code from your API type. So I declared functions ~check~ and ~evaluate~ and then used pattern matching to assign the automatically derived implementations from the API type. ~ClientM~ is the monad in which client functions run. 
+
+~API~ type doesn't contain any data about where the web server is hosted, so to run the derived querying functions you need to specify base URL. I defined a variable ~baseUrl~ that stores URI scheme, host, port, and base path.
+
+Then I defined a data type that represents an action (~Check~ or ~Evaluate~) and derived instances of ~Show~ and ~Read~ for it.
+
+#+BEGIN_SRC haskell
+runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+#+END_SRC
+
+As you can see ~runClientM~, the function used for running queries, returns ~IO (Either ServantError a)~. To show responses I wrote a function ~printResponse~.
+
+#+BEGIN_SRC haskell
+either :: (a -> c) -> (b -> c) -> Either a b -> c
+SC.responseBody :: ServantError -> Data.ByteString.Lazy.Internal.ByteString
+#+END_SRC
+
+~printResponse~ prints the response if no errors occurred and prints ="Error: <error message>"= if the server responded with an error.
+
+#+BEGIN_SRC haskell
+data ClientEnv = ClientEnv { Servant.Common.Req.manager :: Manager
+                           , Servant.Common.Req.baseUrl :: BaseUrl
+                           } -- Defined in ‘Servant.Common.Req’
+newManager :: ManagerSettings -> IO Manager
+defaultManagerSettings :: ManagerSettings
+
+flip ClientEnv baseUrl <$> newManager defaultManagerSettings :: IO ClientEnv
+#+END_SRC
+
+~performAction~ takes an expression and an action. It queries the server to perform the right action and then prints the response using ~printResponse~.
+
+~main~ prompts user for an expression and an action, parses the action using ~readMay~ and performs the action if it is valid, otherwise it prints "Invalid action!". I defined a local function ~prompt~ that takes a string, prints it, and reads a line from the user. ~hFlush~ causes any buffered items to get sent immediately to the operating system. We need to call ~hFlush~ because by default due to Haskell's use of lazy IO the standard output data gets sent to the OS only after we print a new line or the buffer is full.
+
 **** Ruby
+***** Server
 
 For the Ruby version of the server I used a popular framework for developing web application called Ruby on Rails. I generated a new rails project and a new controller. Rails uses MVC (model, view, controller) model. Models are used for working with data, views render data, and controllers have the logic of the application.
 
@@ -1919,6 +1993,183 @@ class MainController < ApplicationController
 end
 #+END_SRC
 
+***** Client
+
+#+BEGIN_SRC ruby
+require 'excon' # library for HTTP
+require 'json'  # library for JSON
+
+# function for querying /check
+def post_check(excon, body)
+  excon.request(
+    method: :post,
+    path: '/check',
+    headers: { 'Content-Type' => 'application/json' },
+    body: body
+  )
+end
+
+# function for querying /evaluate
+def post_evaluate(excon, body)
+  excon.request(
+    method: :post,
+    path: '/evaluate',
+    headers: { 'Content-Type' => 'application/json' },
+    body: body
+  )
+end
+
+# expression input
+print 'Expression: '
+expr = JSON.generate gets.chomp # .chomp removes carriage return characters (like \n)
+
+# action input
+print 'Action (Check or Evaluate): '
+action = gets.chomp
+
+# creating an instance of excon with base url http://localhost:3000
+excon = Excon.new('http://localhost:3000')
+
+case action # identifying the action
+when 'Check'
+  res = post_check(excon, expr)
+  print 'Error: ' if res.status != 200
+  puts res.body
+when 'Evaluate'
+  res = post_evaluate(excon, expr)
+  print 'Error: ' if res.status != 200
+  puts res.body
+else
+  puts 'Invalid action!'
+end
+#+END_SRC
+
+*** Tests
+
+**** Haskell
+
+[[./img/polish_haskell_test.png]]
+
+**** Ruby
+***** Server
+
+[[./img/polish_ruby_server_test.png]]
+
+***** Client
+
+[[./img/polish_ruby_client_test.png]]
+
+*** Evaluation
+**** Safety
+
+In this example I defined an API using types. This approach ensures that the implementation of the server corresponds to the API definition. For example, we can be absolutely sure that /check takes a string and returns a boolean. In the ruby version of the server we don't have that safety. We can accidentally return the result in a wrong format or return nothing at all. Also, with this approach you only use the parameters of the request that you specified in the API type. For example if all you need from a request is the body then you define the type with ~ReqBody~ and get the contents of the request body. If the request data that you can access is restricted by the type then there are less mistakes you can possibly make when you implement the API. When you are implementing your API using Servant you only think about the logic of your code, things like encoding and decoding data are done automatically through type classes. This also reduces the number of possible bugs.
+
+**** Expressiveness
+
+Just by looking at the number of lines of code that I wrote we can see how Haskell is more expressive.
+
+|----------+---------------------------------|
+| Language | Lines of code (client + server) |
+|----------+---------------------------------|
+| Haskell  |                             108 |
+| Ruby     |                             179 |
+|----------+---------------------------------|
+
+Keep in mind that this is all the Haskell code, but I didn't include 380 lines of ruby code in different configuration files generated by the framework. The reason I didn't include them is that Ruby on Rails framework is an overkill for the problem that I was solving. The Haskell version of the code not only uses less amount of code, but it is also almost exactly matches the algorithms' descriptions in English in [[sec:design_reverse_polish]]. For example, let's take a look at the ~parse~ function.
+
+#+BEGIN_SRC haskell
+parse :: (Read a, Fractional a) => String -> Maybe (Expr a)
+parse = flip parseAccum [] . words
+  where parseAccum :: (Read a, Num a) => [String] -> [Expr a] -> Maybe (Expr a)
+        parseAccum []       [x]        = Just x
+        -- "if there is one element in the stack then return it"
+
+        parseAccum ("+":cs) (x1:x2:xs) = parseAccum cs $ x1 :+: x2 : xs
+        parseAccum ("-":cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
+        parseAccum ("*":cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
+        parseAccum ("/":cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
+        -- "when it sees an operator in the input it takes two expressions
+        -- from the stack and constructs a new expression with the operator
+        -- it read as the operator and the two expressions as the operands
+        -- and puts the new expression in the stack"
+
+        parseAccum (str:cs) exprs = readMay str >>= parseAccum cs . (: exprs) . Number
+        -- the function treats the rest of the input as numbers
+
+        parseAccum _        _          = Nothing
+        -- the expression is invalid
+#+END_SRC
+
+As I mentioned in the evaluation of safety the implementation of the API contains only the logic of the application. This feature not only makes the code safer, but also makes it more expressive. This shows that Haskell is very expressive.
+
+**** High level abstractions
+
+Defining an API in terms of types is a great example of Haskell's high level abstractions. In most languages even if you have a type system you can't do anything like this. First of all you can't define readable type-level grammar. Also even if you somehow manage to define types that can be used for constructing a type that represents an arbitrary REST API, the constructed type will be useless because the majority of languages don't support type-level functions. So you won't be able to type check the implementation of your API.
+
+The point I made about only describing logic in the implementation of the server is also relevant to this discussion. The way Servant encodes and decodes data to the right formats just by looking at the type definition of your API is also a great example of using abstractions in Haskell. But you can go even further and define an API type using type variables and then implement it once for an arbitrary type variable that is constraint by type classes that are required for encoding, decoding, etc. This can be useful if, for example, you need the same CRUD (create, read, update delete) API for several entities. All these features of the type system give Haskell support for all kinds of different abstractions.
+
+**** Modularity
+
+The fact that you can use types to define APIs is good for modularity. You can define parts of your API and then compose them. Also you can use the approach I mentioned in the previous section.
+
+#+BEGIN_SRC haskell
+-- ...
+type Create a = ReqBody '[JSON] a :> Post '[JSON] a
+
+type Read a = Get '[JSON, PlainText] a
+
+data User = -- ...
+
+type UserAPI = Create User :<|> Read User
+
+userServer :: Server UserAPI
+userServer = -- ...
+
+data Mail = -- ...
+
+type MailsAPI = Create Mail :<|> Read Mail
+
+mailServer :: Server MailAPI
+mailServer = -- ...
+
+type API = "users" :> UserAPI
+      :<|> "mails" :> MailAPI
+
+server :: Server API
+server = userServer :<|> mailServer
+#+END_SRC
+
+As you can see defining APIs using types is good for modularity. Haskell itself is very modular. And its high level abstractions allow developers to use standard (more or less) tools when they develop libraries. So, for example, grammar for defining APIs can be embedded directly into the language. This means that you can write modular code and then easily reuse it. You can also extend the grammar by providing the required type class instances for your types and type combinators. This shows that Haskell has good modularity.
+
+**** Performance
+
+Let's query the /evaluate endpoint of both of the servers 1000 times with the same expression ~15 7 1 1 + - / 3 * 2 1 1 + + -~ and see how much time it will take for each of the servers. To do this I changed the end of the client script. I added ~repeatAction~ function that takes an integer ~n~ and a monadic action, and runs the action ~n~ times.
+
+#+BEGIN_SRC haskell
+repeatAction :: Monad m => Integer -> m () -> m ()
+repeatAction n a = foldr (const (>> a)) (return ()) [1..n]
+
+performAction :: String -> Action -> IO ()
+performAction expr action =
+  let manager = flip ClientEnv baseUrl <$> newManager defaultManagerSettings
+  in manager >>= \m -> case action of
+                         Check    -> printResponse =<< runClientM (check expr) m
+                         Evaluate -> repeatAction 1000 $ printResponse =<< runClientM (evaluate expr) m
+
+main :: IO ()
+main = performAction "15 7 1 1 + - / 3 * 2 1 1 + + -" Evaluate
+#+END_SRC
+
+Here are the results of the benchmark that show that the Haskell version of the server worked more than 3 times faster than the Ruby version.
+
+***** Haskell
+
+[[./img/polish_haskell_performance.png]]
+
+***** Ruby
+
+[[./img/polish_ruby_performance.png]]
+
 * Conclusion
 ** Safety
 
@@ -1926,7 +2177,38 @@ Haskell allows you to encode logic in types. The benefits of this approach is th
 
 Using Haskell you can avoid almost all run-time errors. For example, if you have a function that can fail then you encode that fail in types by wrapping the result in ~Maybe~, ~Either a~ or another monad. This way when you actually use the function the compiler will force you to check that the function didn't fail, otherwise the code won't type check.
 
+Immutability also makes a big role in making Haskell a very safe language. A lot of the errors in imperative languages are caused by state change. In most languages you can change a global variable in one function without realizing that this will break another function.
+
+If you declare the type of your function or variable before the value then the number of possible ways in which you can write this variable or function is significantly reduced. There are few ways of writing the right code and many ways of writing incorrect code, in most languages the number of ways to write incorrect code is infinite. Haskell reduces the number of ways in which you can write your code, making it harder to write code that compiles, but doesn't work as it should.
+
+#+BEGIN_SRC haskell
+data Bool = True | False
+
+not :: Bool -> Bool
+#+END_SRC
+
+There are four ways of defining the function ~not~ (2 possible inputs and 2 possible outputs for each of them). In languages like Ruby there are infinitely many ways of defining a function like this, just because the language doesn't have a type system and it uses impure functions. In languages like C# there are still infinitely many ways of defining ~not~. The type system reduces the number of possible inputs and outputs, but you still can do any impure computations inside the function. You can choose to write some code that is not directly related to the function ~not~ and crash the application, for example by just dividing by zero. In Haskell to cause a problem this way you would need to put the division somewhere in the code and also force Haskell to evaluate the division, because Haskell won't evaluate the expression with division by zero as the result of the function doesn't depend on it. This is another example of how in Haskell it's harder to write incorrect code. Another example is ~maybe~ function.
+
+#+BEGIN_SRC haskell
+maybe :: b -> (a -> b) -> Maybe a -> b
+#+END_SRC
+
+There are only two ways of defining this function (return the first argument or do the right thing). Because the function's type uses arbitrary type variables you can't just construct a new value of type ~b~ or do modify somehow the first two arguments. And sometimes type declaration uniquely defines what the function does. Below there are three functions that you can't implement incorrectly.
+
+#+BEGIN_SRC haskell
+id :: a -> a
+const :: a -> b -> a
+flip :: (a -> b -> c) -> b -> a -> c
+#+END_SRC
+
+All these examples show how Haskell's type system and immutability make your code safer.
+
 ** Expressiveness
+
+Haskell types not only make code safer, but they also make it more readable. Type signature significantly reduces the number of possible implementations of the function, so if you know the name and the type of a function then more often than not you can tell what the function does without looking at the implementation. This helps a lot when you are working in a team and you want to use a function written by another person. It also makes it easier to use libraries. By defining types using ~newtype~ and ~type~ you can make it even easier to understand what functions do without using any more data at run time.
+
+As you saw in the examples, Haskell usually requires less code to solve a problem. The reason for this is the minimalist syntax and features like partial application, pattern matching, custom operators, etc. Also, in both cases the code was close to the description of the problem in English. This shows that Haskell is a very expressive language.
+
 ** High level abstractions
 ** Modularity
 ** Performance
@@ -1935,4 +2217,4 @@ Using Haskell you can avoid almost all run-time errors. For example, if you have
 
 [[https://wiki.haskell.org/Why_Haskell_matters]]
 
-[[https://stackoverflow.com/questions/13190314/io-happens-out-of-order-when-using-getline-and-putstr]]
+[[https://github.com/Gabriel439/post-rfc/blob/master/sotu.md]]

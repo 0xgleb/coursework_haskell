@@ -18,11 +18,11 @@ infixl 6 :-:
 infixl 7 :*:
 infixl 7 :/:
 
-data Expr a = Expr a :+: Expr a
-            | Expr a :-: Expr a
-            | Expr a :*: Expr a
-            | Expr a :/: Expr a
-            | Number a
+data Expr a = !(Expr a) :+: !(Expr a)
+            | !(Expr a) :-: !(Expr a)
+            | !(Expr a) :*: !(Expr a)
+            | !(Expr a) :/: !(Expr a)
+            | Number !a
             deriving Show
 
 eval :: (Num a, Fractional a) => Expr a -> a
@@ -40,7 +40,7 @@ parse = flip parseAccum [] . words
         parseAccum ("-":cs) (x1:x2:xs) = parseAccum cs $ x1 :-: x2 : xs
         parseAccum ("*":cs) (x1:x2:xs) = parseAccum cs $ x1 :*: x2 : xs
         parseAccum ("/":cs) (x1:x2:xs) = parseAccum cs $ x1 :/: x2 : xs
-        parseAccum (str:cs) exprs = readMay str >>= parseAccum cs . (: exprs) . Number
+        parseAccum (str:cs) exprs      = readMay str >>= parseAccum cs . (: exprs) . Number
         parseAccum _        _          = Nothing
 
 server :: Server API.API
