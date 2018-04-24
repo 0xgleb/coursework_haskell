@@ -911,25 +911,15 @@ In this example I will implement a client-server system. The client takes an exp
 
 By comparing methods for defining and implementing an API this example is to show Haskell's safety, expressiveness, high-level abstractions, and modularity.
 
-* Design
-** Sorting a big file
+* Sorting a big file
+** Design
 <<sec:design_sorting>>
 
 The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
-** Reverse polish server
-<<sec:design_reverse_polish>>
+[[./img/file_sorting_diagram.png]]
 
-In the script there needs be a data type that represents a simple mathematical expression (in terms of numbers and operators ~+~, ~-~, ~*~, ~/~). For this data type a function that evaluates the expression must be defined. If the function is called on a number then this number gets returned, if the function is called on an expression then the function gets recursively called on the operands and the current operator is applied to the two results.
-
-There must be a function that takes a string and reads the expression in reverse polish notation that is stored in it. The function returns a nullable expression of the expression type. The function uses a stack of expressions. When it sees an operator in the input it takes two expressions from the stack and constructs a new expression with the operator it read as the operator and the two expressions as the operands and puts the new expression in the stack. The function treats the rest of the input as numbers delimited by spaces. After the function finishes going through the entire input string if there is only one element in the stack then it returns it, otherwise it return a null value because the expression is invalid.
-
-These functions are then used to implement the following API endpoints:
-- POST: /check - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with a boolean in JSON format. If the given expression is valid then the server responds with ~true~, if the given expression is invalid then the server responds with ~false~.
-- POST: /evaluate - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with code 200 and response body containing the result of evaluating the expression if the expression is valid, otherwise returns a response with error code 400 (Bad Request) and error message "invalid".
-
-* Solution
-** Sorting a big file
+** Solution
 *** Code
 **** Haskell
 
@@ -1359,7 +1349,27 @@ As you can see this significantly improved performance. If this still isn't fast
 
 This example also shows what Haskell's high level abstractions can do. A good example of the language's use of high-level abstractions from the optimized version of the script is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. Haskell's type system is very strict, but at the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
 
-** Reverse Polish server
+* Reverse Polish server
+** Design
+<<sec:design_reverse_polish>>
+
+In the script there needs be a data type that represents a simple mathematical expression (in terms of numbers and operators ~+~, ~-~, ~*~, ~/~). For this data type a function that evaluates the expression must be defined. If the function is called on a number then this number gets returned, if the function is called on an expression then the function gets recursively called on the operands and the current operator is applied to the two results.
+
+There must be a function that takes a string and reads the expression in reverse polish notation that is stored in it. The function returns a nullable expression of the expression type. The function uses a stack of expressions. When it sees an operator in the input it takes two expressions from the stack and constructs a new expression with the operator it read as the operator and the two expressions as the operands and puts the new expression in the stack. The function treats the rest of the input as numbers delimited by spaces. After the function finishes going through the entire input string if there is only one element in the stack then it returns it, otherwise it return a null value because the expression is invalid.
+
+These functions are then used to implement the following API endpoints:
+- POST: /check - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with a boolean in JSON format. If the given expression is valid then the server responds with ~true~, if the given expression is invalid then the server responds with ~false~.
+- POST: /evaluate - extracts an expression in reverse polish notation in JSON format from the request body and returns a response with code 200 and response body containing the result of evaluating the expression if the expression is valid, otherwise returns a response with error code 400 (Bad Request) and error message "invalid".
+
+Parsing expressions in reverse polish notation:
+
+[[./img/parsing_reverse_polish.png]]
+
+The server:
+
+[[./img/reverse_polish_server.png]]
+
+** Solution
 *** Code
 **** Haskell
 ***** Server
