@@ -924,32 +924,18 @@ The script needs to read the file \texttt{"random\_numbers"}, which contains com
 *** Tests
 
 For testing the scripts I will write another script that generates a comma-separated list of integers in range $[1,1000]$.
-# | / | <17>              | <35>                                | <40>                                     |
 
-#+ATTR_LATEX: :align |r|l|l|l| :center
-|---+-------------------+------------------------------------------------+------------------------------------------|
-| - | Description       | Test instructions                              | Expected Result                          |
-|---+-------------------+------------------------------------------------+------------------------------------------|
-| / |                   |                                                |                                          |
-| # | Number generating | Run the script to generate a file              | Comma-separated list of integers in      |
-|   | script should     | with 10 numbers. Inspect the file.             | both files. The files should be          |
-|   | work correctly.   | Run the script again and inspect               | different (though there is a small       |
-|   |                   | the new file.                                  | chance that the files will be the same   |
-|   |                   |                                                | , in this case just run the test         |
-|   |                   |                                                | again).                                  |
-|---+-------------------+------------------------------------------------+------------------------------------------|
-| # | Outputs of the    | Generate a file with 10 integers, inspect it,  | Sorted comma-separated list of integers. |
-|   | scripts for the   | run the script and inspect the output file.    | With all the numbers from the randomly   |
-|   | same list of      | Generate a new file. Repeat the test.          | generated file.                          |
-|   | integers should   |                                                |                                          |
-|   | be the same.      |                                                |                                          |
-|---+-------------------+------------------------------------------------+------------------------------------------|
-| # | Output of the     | Generate a file with 10 integers, run all 3    | There should be no differences.          |
-|   | sorting scripts   | sorting scripts, check differences between the |                                          |
-|   | for the same list | output files.                                  |                                          |
-|   | of integers       |                                                |                                          |
-|   | is the same.      |                                                |                                          |
-|---+-------------------+------------------------------------------------+------------------------------------------|
+#+ATTR_LATEX: :align |r|p{3cm}|p{6cm}|p{7cm}| :environment longtable
+| / | <40>                                     | <40>                                     | <40>                                     |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+|   | Description                              | Test instructions                        | Expected result                          |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 1 | Number generating script should work correctly. | Run the script to generate a file with 10 numbers. Inspect the file. Run the script again and inspect the new file. | Comma-separated list of integers in both files. The files should be different (though there is a small chance that the files will be the same , in this case just run the test again). |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 2 | Outputs of the scripts for the same list of integers should be the same. | Generate a file with 10 integers, inspect it, run the script and inspect the output file. Generate a new file. Repeat the test. | Sorted comma-separated list of integers. With all the numbers from the randomly generated file. |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 3 | Output of the sorting scripts for the same list of integers is the same. | Generate a file with 10 integers, run all 3 sorting scripts, check differences between the output files. | There should be no differences.          |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
 
 *** Benchmark
 
@@ -1393,6 +1379,7 @@ This example also shows what Haskell's high level abstractions can do. A good ex
 
 * Reverse Polish server
 ** Design
+*** Algorithm
 <<sec:design_reverse_polish>>
 
 In the script there needs be a data type that represents a simple mathematical expression (in terms of numbers and operators ~+~, ~-~, ~*~, ~/~). For this data type a function that evaluates the expression must be defined. If the function is called on a number then this number gets returned, if the function is called on an expression then the function gets recursively called on the operands and the current operator is applied to the two results.
@@ -1410,6 +1397,26 @@ Parsing expressions in reverse polish notation:
 The server:
 
 [[./img/reverse_polish_server.png]]
+
+*** Tests
+
+#+ATTR_LATEX: :align |r|p{3cm}|p{6cm}|p{7cm}| :environment longtable
+| / | <40>                                     | <40>                                     | <40>                                     |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+|   | Description                              | Test instructions                        | Expected result                          |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 1 | Check action should return true for valid expressions. | Run the script several times with the check action and the following expressions: "1 1 +", "15 7 1 1 + - / 3 * 2 1 1 + + -". | True for every input.                    |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 2 | Check action should return false for invalid expressions. | Run the script several times with the check action and the following inputs: "1 + 1", "1 1 1 +", "1 test +", "". | False for every input.                   |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 3 | Evaluation action should evaluate given expression and return the result for valid expressions. | Run the script several times with the evaluate action and the same inputs as in the first test. | 2.0, 5.0 respectively.                   |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| 4 | Evaluation action should return error "Invalid Expression!" for invalid expressions. | Run the script several times with the evaluate action and inputs from the second test. | Error: "Invalid expression!"             |
+|---+------------------------------------------+------------------------------------------+------------------------------------------|
+
+*** Benchmark
+
+Call /evaluate with expression "15 7 1 1 + - / 3 * 2 1 1 + + -" 1000 times for each server and measure how much times it takes.
 
 ** Solution
 *** Code
@@ -1892,19 +1899,52 @@ end
 #+END_SRC
 
 *** Tests
-
 **** Haskell
+
+I ran all the tests from the test table and got the expected result for each test.
 
 [[./img/polish_haskell_test.png]]
 
+=./server &= executes binary file =server= in the background.
+
 **** Ruby
-***** Server
+
+I ran all the tests from the test table and got the expected result for each test.
+
+[[./img/polish_ruby_client_test.png]]
+
+I started the server in another window, because it shows logs that I don't need for the tests.
 
 [[./img/polish_ruby_server_test.png]]
 
-***** Client
+*** Benchmark
 
-[[./img/polish_ruby_client_test.png]]
+I modified the Haskell version of the client side to compare performances of the server.
+
+#+BEGIN_SRC haskell
+repeatAction :: Monad m => Integer -> m () -> m ()
+repeatAction n a = foldr (const (>> a)) (return ()) [1..n]
+
+performAction :: String -> Action -> IO ()
+performAction expr action =
+  let manager = flip ClientEnv baseUrl <$> newManager defaultManagerSettings
+  in manager >>= \m -> case action of
+                         Check    -> printResponse =<< runClientM (check expr) m
+                         Evaluate -> repeatAction 1000 $ printResponse =<< runClientM (evaluate expr) m
+
+main :: IO ()
+main = performAction "15 7 1 1 + - / 3 * 2 1 1 + + -" Evaluate
+#+END_SRC
+
+To run the benchmark I used several Linux commands. =>= operator forwards output of a program to a file. =/dev/null= is the null device - a device file that discards all data written to it but reports that the write operation succeeded. =&&= operator takes two commands, and runs the second command if the first successfully finished. Here are the results of the benchmark
+
+**** Haskell
+
+[[./img/polish_haskell_performance.png]]
+
+**** Ruby
+
+[[./img/polish_ruby_performance.png]]
 
 ** Evaluation
 **** Safety
@@ -1990,32 +2030,7 @@ As you can see defining APIs using types is good for modularity. Haskell itself 
 
 **** Performance
 
-Let's query the /evaluate endpoint of both of the servers 1000 times with the same expression ~15 7 1 1 + - / 3 * 2 1 1 + + -~ and see how much time it will take for each of the servers. To do this I changed the end of the client script. I added ~repeatAction~ function that takes an integer ~n~ and a monadic action, and runs the action ~n~ times.
-
-#+BEGIN_SRC haskell
-repeatAction :: Monad m => Integer -> m () -> m ()
-repeatAction n a = foldr (const (>> a)) (return ()) [1..n]
-
-performAction :: String -> Action -> IO ()
-performAction expr action =
-  let manager = flip ClientEnv baseUrl <$> newManager defaultManagerSettings
-  in manager >>= \m -> case action of
-                         Check    -> printResponse =<< runClientM (check expr) m
-                         Evaluate -> repeatAction 1000 $ printResponse =<< runClientM (evaluate expr) m
-
-main :: IO ()
-main = performAction "15 7 1 1 + - / 3 * 2 1 1 + + -" Evaluate
-#+END_SRC
-
-Here are the results of the benchmark that show that the Haskell version of the server worked more than 3 times faster than the Ruby version.
-
-***** Haskell
-
-[[./img/polish_haskell_performance.png]]
-
-***** Ruby
-
-[[./img/polish_ruby_performance.png]]
+The benchmark shows that the Haskell version of the server is more than 3 times faster than the Ruby version. However, this comparison is not very fair because for the Ruby version of the server I used a big framework, which was unnecessary.
 
 * Conclusion
 ** Safety
