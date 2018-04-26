@@ -1,3 +1,5 @@
+#+STARTUP: align
+
 #+LATEX_HEADER: \usepackage[margin=1.5cm,includefoot]{geometry}
 #+LATEX_HEADER: \usepackage[none]{hyphenat}
 #+LATEX_HEADER: \usepackage{array}
@@ -926,16 +928,16 @@ The script needs to read the file \texttt{"random\_numbers"}, which contains com
 For testing the scripts I will write another script that generates a comma-separated list of integers in range $[1,1000]$.
 
 #+ATTR_LATEX: :align |r|p{3cm}|p{6cm}|p{7cm}| :environment longtable
-| / | <40>                                     | <40>                                     | <40>                                     |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-|   | Description                              | Test instructions                        | Expected result                          |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| / | <30>                           | <30>                           | <30>                           |
+|---+--------------------------------+--------------------------------+--------------------------------|
+|   | Description                    | Test instructions              | Expected result                |
+|---+--------------------------------+--------------------------------+--------------------------------|
 | 1 | Number generating script should work correctly. | Run the script to generate a file with 10 numbers. Inspect the file. Run the script again and inspect the new file. | Comma-separated list of integers in both files. The files should be different (though there is a small chance that the files will be the same , in this case just run the test again). |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
+|---+--------------------------------+--------------------------------+--------------------------------|
 | 2 | Outputs of the scripts for the same list of integers should be the same. | Generate a file with 10 integers, inspect it, run the script and inspect the output file. Generate a new file. Repeat the test. | Sorted comma-separated list of integers. With all the numbers from the randomly generated file. |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-| 3 | Output of the sorting scripts for the same list of integers is the same. | Generate a file with 10 integers, run all 3 sorting scripts, check differences between the output files. | There should be no differences.          |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
+|---+--------------------------------+--------------------------------+--------------------------------|
+| 3 | Output of the sorting scripts for the same list of integers is the same. | Generate a file with 10 integers, run all 3 sorting scripts, check differences between the output files. | There should be no differences. |
+|---+--------------------------------+--------------------------------+--------------------------------|
 
 *** Benchmark
 
@@ -1221,13 +1223,13 @@ I changed ~SIZE~ macro in the C script to ~10~ for the purpose of the test.
 
 [[./img/sort_test.png]]
 
-I used some Linux commands to run the test. =cat= takes a file name and shows the file (if it exists). The scripts I wrote don't add a newline character at the end of files. To get a newline after the output of =cat=, I used =echo= command. It takes a string and prints it, I didn't give it any input, so it just print a newline. =diff= command shows differences between 2 files.
+I used some Linux commands to run the test. ~cat~ takes a file name and shows the file (if it exists). The scripts I wrote don't add a newline character at the end of files. To get a newline after the output of ~cat~, I used ~echo~ command. It takes a string and prints it, I didn't give it any input, so it just print a newline. ~diff~ command shows differences between 2 files.
 
-First I ran the first test to check that the number generating script works correctly. As you can see, it does. Then I ran all 3 sorting scripts, and did the second test on the output of the script written in Haskell. =haskell_result= contains the sorted list, so the test is passed. Then I ran test 3 and compared the 3 output files. =diff= command didn't show any differences, hence all the scripts work correctly.
+First I ran the first test to check that the number generating script works correctly. As you can see, it does. Then I ran all 3 sorting scripts, and did the second test on the output of the script written in Haskell. ~haskell_result~ contains the sorted list, so the test is passed. Then I ran test 3 and compared the 3 output files. ~diff~ command didn't show any differences, hence all the scripts work correctly.
 
 *** Benchmark
 
-I generated a file with one million random numbers (I changed macro ~SIZE~ in the C script back to a million) and measured the execution time using =time= command and tested that the output is correct by doing test 3 again.
+I generated a file with one million random numbers (I changed macro ~SIZE~ in the C script back to a million) and measured the execution time using ~time~ command and tested that the output is correct by doing test 3 again.
 
 [[./img/sort_performance.png]]
 
@@ -1394,25 +1396,29 @@ Parsing expressions in reverse polish notation:
 
 [[./img/parsing_reverse_polish.png]]
 
-The server:
+Server:
 
 [[./img/reverse_polish_server.png]]
+
+Client:
+
+[[./img/client_flowchart.png]]
 
 *** Tests
 
 #+ATTR_LATEX: :align |r|p{3cm}|p{6cm}|p{7cm}| :environment longtable
-| / | <40>                                     | <40>                                     | <40>                                     |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-|   | Description                              | Test instructions                        | Expected result                          |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-| 1 | Check action should return true for valid expressions. | Run the script several times with the check action and the following expressions: "1 1 +", "15 7 1 1 + - / 3 * 2 1 1 + + -". | True for every input.                    |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-| 2 | Check action should return false for invalid expressions. | Run the script several times with the check action and the following inputs: "1 + 1", "1 1 1 +", "1 test +", "". | False for every input.                   |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-| 3 | Evaluation action should evaluate given expression and return the result for valid expressions. | Run the script several times with the evaluate action and the same inputs as in the first test. | 2.0, 5.0 respectively.                   |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
-| 4 | Evaluation action should return error "Invalid Expression!" for invalid expressions. | Run the script several times with the evaluate action and inputs from the second test. | Error: "Invalid expression!"             |
-|---+------------------------------------------+------------------------------------------+------------------------------------------|
+| / | <30>                           | <30>                           | <30>                           |
+|---+--------------------------------+--------------------------------+--------------------------------|
+|   | Description                    | Test instructions              | Expected result                |
+|---+--------------------------------+--------------------------------+--------------------------------|
+| 1 | Check action should return true for valid expressions. | Run the script several times with the check action and the following expressions: "1 1 +", "15 7 1 1 + - / 3 * 2 1 1 + + -". | True for every input.          |
+|---+--------------------------------+--------------------------------+--------------------------------|
+| 2 | Check action should return false for invalid expressions. | Run the script several times with the check action and the following inputs: "1 + 1", "1 1 1 +", "1 test +", "". | False for every input.         |
+|---+--------------------------------+--------------------------------+--------------------------------|
+| 3 | Evaluation action should evaluate given expression and return the result for valid expressions. | Run the script several times with the evaluate action and the same inputs as in the first test. | 2.0, 5.0 respectively.         |
+|---+--------------------------------+--------------------------------+--------------------------------|
+| 4 | Evaluation action should return error "Invalid Expression!" for invalid expressions. | Run the script several times with the evaluate action and inputs from the second test. | Error: "Invalid expression!"   |
+|---+--------------------------------+--------------------------------+--------------------------------|
 
 *** Benchmark
 
@@ -1905,7 +1911,7 @@ I ran all the tests from the test table and got the expected result for each tes
 
 [[./img/polish_haskell_test.png]]
 
-=./server &= executes binary file =server= in the background.
+~./server &~ executes binary file ~server~ in the background.
 
 **** Ruby
 
@@ -1936,7 +1942,7 @@ main :: IO ()
 main = performAction "15 7 1 1 + - / 3 * 2 1 1 + + -" Evaluate
 #+END_SRC
 
-To run the benchmark I used several Linux commands. =>= operator forwards output of a program to a file. =/dev/null= is the null device - a device file that discards all data written to it but reports that the write operation succeeded. =&&= operator takes two commands, and runs the second command if the first successfully finished. Here are the results of the benchmark
+To run the benchmark I used several Linux commands. ~>~ operator forwards output of a program to a file. ~/dev/null~ is the null device - a device file that discards all data written to it but reports that the write operation succeeded. ~&&~ operator takes two commands, and runs the second command if the first successfully finished. Here are the results of the benchmark
 
 **** Haskell
 
@@ -2072,11 +2078,32 @@ Haskell types not only make code safer, but they also make it more readable. Typ
 As you saw in the examples, Haskell usually requires less code to solve a problem. The reason for this is the minimalist syntax and features like partial application, pattern matching, custom operators, etc. Also, in both cases the code was close to the description of the problem in English. This shows that Haskell is a very expressive language.
 
 ** High level abstractions
+
+In Haskell the type system is very strict and safe, but at the same time it's very flexible. Using algebraic data types, type variables, type classes, and other tools you can model very complex logic with types. An API defined in terms of types is a good example of that - it's flexible, extensible, and safe. It also allows you to generate client side code from your API type, which makes the system even more abstract.
+
+In Haskell, unlike imperative languages, sequencing task is removed. You only care what the program needs to compute, not how or when it will compute it. Haskell tools like ~deriving~ allow you to generate functions for your custom data types. Extensions like  ~GeneralizedNewtypeDeriving~, ~DeriveGeneric~, ~DeriveAnyClass~, etc extend this mechanism even further and allow you to derive instances for non-standard type classes. ~TemplateHaskell~ extension adds compile-time metaprogramming facilities. This means you can write type safe Haskell code that modifies type safe Haskell code (usually adds functions).
+
+These features allow you to focus on the logic of the application you are developing and let Haskell do the rest of the work. And if you are unhappy with the way Haskell does something then you can usually specify how you want the code work, for example by using different compiler flags. This makes Haskell a very abstract language.
+
 ** Modularity
+
+Lazy evaluation makes code more modular. For example, you can implement a function that finds maximum of a list as ~maximum = head . sort~. Thanks to lazy evaluation this won't sort the entire list. Without lazy evaluation we can't efficiently use these 2 functions to implement ~maximum~. So lazy evaluation improves modularity.
+
+The type system also improves modularity, because you can easily and safely compose types, functions, etc. Ad-hoc polymorphism and parametric polymorphism allow developers to write the most general version of functions, making them more reusable. The syntax plays a big role in making Haskell code more modular, as it makes things like function composition very easy. You can see this in the first example, where my main IO action is one expression, that uses more than 10 functions.
+
+These features make Haskell code reusable.
+
 ** Performance
+
+In both examples Haskell performed better than Ruby. In the first example I did some optimizations, but for most of the code I kept things simple. High-level programming languages don't have to be very fast and they are usually slower than low-level programming languages, however, as Jan Stolarek showed in his [[http://lambda.jstolarek.com/2013/04/haskell-as-fast-as-c-a-case-study/][blog]], Haskell code can be as fast as C code. Also Haskell has a foreign function interface that lets you call C code from Haskell. Facebook's spam filtering system is implemented in Haskell and C++ and it handles millions of requests per second. In conclusion, Haskell's performance is good for most use cases, and if for some parts of your program you need higher performance then you can use the foreign function interface and implement it in C.
+
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
 [[https://wiki.haskell.org/Why_Haskell_matters]]
 
 [[https://github.com/Gabriel439/post-rfc/blob/master/sotu.md]]
+
+[[http://lambda.jstolarek.com/2013/04/haskell-as-fast-as-c-a-case-study/]]
+
+#  LocalWords:  Stolarek
