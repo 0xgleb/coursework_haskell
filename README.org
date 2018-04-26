@@ -2097,6 +2097,10 @@ These features make Haskell code reusable.
 
 In both examples Haskell performed better than Ruby. In the first example I did some optimizations, but for most of the code I kept things simple. High-level programming languages don't have to be very fast and they are usually slower than low-level programming languages, however, as Jan Stolarek showed in his [[http://lambda.jstolarek.com/2013/04/haskell-as-fast-as-c-a-case-study/][blog]], Haskell code can be as fast as C code. Also Haskell has a foreign function interface that lets you call C code from Haskell. Facebook's spam filtering system is implemented in Haskell and C++ and it handles millions of requests per second. In conclusion, Haskell's performance is good for most use cases, and if for some parts of your program you need higher performance then you can use the foreign function interface and implement it in C.
 
+** Final conclusion
+
+As I showed in this investigation, there are a lot of benefits to using Haskell for developing applications. It's safety, expressiveness, level of abstraction, modularity, and performance allow programmers to quickly and easily write code that is safe, stable, easy to refactor, and has low defect rate. Of course it has some disadvantages, like the fact that currently not many software developers know Haskell or that it can be hard to learn as most coders are not used to thinking about problems in functional/declarative manner. In conclusion, if one's team of developers can work in Haskell then for developing most kinds of applications (except for drivers, 3d games, and other applications that require the best possible performance) Haskell will be one of the best programming languages to use.
+
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
 
