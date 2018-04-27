@@ -11,6 +11,7 @@
 
 #+OPTIONS: toc:nil title:nil
 
+#+BEGIN_EXPORT latex
 \begin{titlepage}
   \begin{center}
     \line(1,0){300} \\
@@ -26,10 +27,11 @@
 \tableofcontents
 
 \newpage
+#+END_EXPORT
 
 * Purpose
 
-The purpose of this project is to investigate how Haskell works and how its features benefit the developers. This investigation will show why Haskell as a high level language is better than standard imperative languages in terms of safety, expressiveness, high-level abstractions, modularity and performance. A lot of the concepts that Haskell uses can be found in other functional programming languages and even in some imperative languages. Over the course of this project I will demonstrate how Haskell works, explain its concepts, and compare that to more commonly used languages and concepts.
+The purpose of this project is to investigate how Haskell works and how its features benefit the developers. This investigation will show why Haskell as a high level language is better than standard imperative languages in terms of safety, expressiveness, high-level abstractions, modularity and performance. A lot of the concepts that Haskell uses can be found in other functional programming languages and even in some imperative languages. Over the course of this project I will demonstrate how Haskell works, explain its concepts, and compare that with more commonly used languages and concepts.
 
 * Analysis
 
@@ -38,11 +40,11 @@ When we pick a programming language for a project we want it to have several fea
 ** Goal
 *** Safety
 
-Usually programmers spend a lot of time finding and fixing bugs, which is a huge problem because for businesses it's crucial to deliver code as fast as possible. But what's an even bigger problem is programs crashing in production. This can cause businesses to lose a lot money or, in the worst cases, shut down. So we want programming languages to prevent as many bugs as possible.
+Usually programmers spend a lot of time finding and fixing bugs, which is a huge problem because for businesses it is crucial to deliver code as fast as possible. But what's an even bigger problem is programs crashing in production. This can cause businesses to lose a lot money or, in the worst cases, shut down. So we want programming languages to prevent as many bugs as possible.
 
 A lot of run-time issues happen because of state changes. In most languages variables are mutable and functions can have side effects, this means that we can accidentally change a global variable and cause the entire program to crash.
 
-Here are some examples of methods that we can use to solve this problem: type systems, automated tests, code checkers. Let's take a look at every one of these approaches. Not all languages have type systems, but even the ones that do usually allow dangerous actions like implicit casting. Automated tests are great and they help a lot, but it's hard to test every single thing, especially if the part of the code that you are testing depends on the state. Non-standard code checkers can help, but often they can't prevent even simple run-time errors.
+Here are some examples of methods that we can use to solve this problem: type systems, automated tests, code checkers. Let's take a look at every one of these approaches. Not all languages have type systems, but even the ones that do usually allow dangerous actions like implicit casting. Automated tests are great and they help a lot, but it is hard to test every single thing, especially if the part of the code that you are testing depends on the state. Non-standard code checkers can help, but often they can't prevent even simple run-time errors.
 
 *** Expressiveness
 
@@ -52,7 +54,7 @@ To solve this problem most languages just create special syntax for common thing
 
 *** High level abstractions
 
-High-level languages allow developers to think just about solving the business problem and minimize the amount of the code that specifies what exactly happens inside the computer. There are two areas that are fundamental in programming - resource management and sequencing. Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main idea of imperative programming is to allow programmers to write a sequence of instructions that computer will execute. The only thing imperative languages can do to abstract sequencing is introducing new keywords and libraries, thus cluttering the language.
+High-level languages allow developers to think just about solving the business problem and minimize the amount of the code that specifies what exactly happens inside the computer. There are two areas that are fundamental in programming - resource management and sequencing.cite:whyhaskellmatters Most modern languages have tools like garbage collectors that automatically deal with resource management, however, as most languages are imperative, they force the programmer to specify the order of computations. This is because the main idea of imperative programming is to allow programmers to write a sequence of instructions that computer will execute. The only thing imperative languages can do to abstract sequencing is introducing new keywords and libraries, thus cluttering the language.
 
 We also want to be able to work with complex abstractions and general versions of different types. For example if the only important aspect of a data structure is that it can be parsed from a string then we don't want to work with a specific type, we want to use the most general case possible. Also this helps avoiding errors.
 
@@ -92,7 +94,7 @@ main = print "What's your name?" >> getLine >>= print . (++ "!") . ("Hello " ++)
 
 We will come back to both of these examples later.
 
-*** Function purity
+*** Pure functions
 
 Haskell is very different from most languages. In Haskell all variables are immutable. This means that you don't really have variables, you only have constants. Also in Haskell all functions are pure. A pure function a function that any time it gets called with the same arguments returns the same result. Pure functions don't have side effects; they can't print something to console, read files or modify variables. Functions in Haskell are like functions in maths, they are just mappings between types. These properties make testing and debugging code much easier.
 
@@ -117,7 +119,7 @@ f x y = x*x + y*y
 
 In Haskell to pass arguments into a function we don't use brackets and/or commas, we separate arguments with spaces. As you can see the definition is very simple and it doesn't use any unnecessary syntax like ~def~ or ~return~. It's just the function name, arguments and what it returns.
 
-In Haskell functions and types are the two primary things and everything is centered around them, so it makes sense why it's very easy to define them.
+In Haskell functions and types are the two primary things and everything is centered around them, so it makes sense why defining them is really easy.
 
 *** Introduction to the type system
 
@@ -230,6 +232,8 @@ x ** y -- for floating numbers
 [1,3..10] <=> [1, 3, 5, 7, 9]
 [2,3,5,7..100] -- error, the compiler is not that smart
 [5,4..1] <=> [5, 4, 3, 2, 1]
+head [1,2,3] <=> 1
+tail [1,2,3] <=> [2,3]
 #+END_SRC
 
 **** Strings
@@ -257,31 +261,6 @@ snd (x, y) = y
 
 fst (x, y, z) -- ERROR: fst :: (a, b) -> a
 snd (x, y, z) -- ERROR: snd :: (a, b) -> b
-#+END_SRC
-
-*** Applying functions
-
-Here are two operators that are used very often.
-
-#+BEGIN_SRC haskell
-(.) :: (b -> c) -> (a -> b) -> a -> c
-(.) f g x = f (g x)
-
-($) :: (a -> b) -> a -> b
-($) f x = f x
-#+END_SRC
-
-Here are some examples:
-
-#+BEGIN_SRC haskell
-f g h x <=> (((f g) h) x)
-
-f g $ h x   <=> f g (h x)
-f $ g h x   <=> f (g h x) <=> f ((g h) x)
-f $ g $ h x <=> f (g (h x))
-
-(f . g) x     <=> f . g $ x     <=> f (g x)
-(f . g . h) x <=> f . g . h $ x <=> f (g (h x))
 #+END_SRC
 
 *** More on the syntax
@@ -338,87 +317,6 @@ absolute' x
 
 In Haskell indentation is very important. Just like in Python programs with incorrect indentation will not work or, in some cases, will work, but not the way it was intended. Haskell uses spaces instead of tabs, if you try to use tabs then the program won't compile.
 
-*** Functional style
-
-Let's introduce a problem and then solve it using first Python and then Haskell.
-
-We want a function that takes a list of integers and returns the sum of all even numbers in that list.
-
-#+BEGIN_SRC haskell
-[1, 2, 3, 4, 5] -> 2 + 4 -> 6
-#+END_SRC
-
-#+BEGIN_SRC python
-def evenSum(l):
-    result = 0
-    for x in l:
-        if(x % 2 == 0):
-            result += x
-    return result  
-#+END_SRC
-
-We can't implement it in Haskell exactly the same way because it doesn't have loops or mutable variables. So here is how we can implement it in Python without mutating variables or using loops.
-
-#+BEGIN_SRC python
-def accumSum(l, n):
-    if(len(l) == 0):
-        return n
-    else:
-        x, *xs = l
-        if(x % 2 == 0):
-            return accumSum(xs, x + n)
-        else:
-            return accumSum(xs, n)
-
-def evenSum(l):
-    return accumSum(l, 0)
-#+END_SRC
-
-Before we start, here are some Haskell functions we will use.
-
-#+BEGIN_SRC haskell
-even :: Integral a => a -> Bool -- returns True only if the given number is even
-head :: [a] -> a                -- returns the first element of the given list
-tail :: [a] -> [a]              -- returns the given list without the first element
-#+END_SRC
-
-Here is our first solution:
-
-#+BEGIN_SRC haskell
-evenSum :: [Integer] -> Integer
-evenSum l = accumSum 0 l
-
-accumSum :: Integer -> [Integer] -> Integer
-accumSum n l = if l == []
-                  then n
-                  else let x  = head l
-                           xs = tail l
-                           in if even x
-                                 then accumSum (n+x) xs
-                                 else accumSum n xs
-#+END_SRC
-
-We can do several improvements to this piece of code. First we can make the type declaration more general (without changing the implementation).
-
-#+BEGIN_SRC haskell
-evenSum :: Integral a => [a] -> a
-#+END_SRC
-
-We don't want ~accumSum~ to be a global variable, so we can make it local using ~where~ clause. Also we can use pattern matching instead of ~head~ and ~tail~. Then we can use \eta-reduction to get this:
-
-#+BEGIN_SRC haskell
-evenSum :: Integral a => [a] -> a
-evenSum = accumSum 0
-    where accumSum n []     = n
-          accumSum n (x:xs) = if even x
-                                 then accumSum (n+x) xs
-                                 else accumSum x xs
-#+END_SRC
-
-Pattern matching is using values instead of variable arguments. We can't use any function we want on the left side - only type constructors, which I will discuss later.
-
-We can simplify this even more using higher order functions.
-
 *** Higher order functions
 
 Higher order functions are functions that take another function as an argument. Here are several examples:
@@ -426,50 +324,51 @@ Higher order functions are functions that take another function as an argument. 
 #+BEGIN_SRC haskell
 filter :: (a -> Bool) -> [a] -> [a]
 map    :: (a -> b) -> [a] -> [b]
-foldl  :: (a -> b -> a) -> a -> [b] -> a
 (.)    :: (b -> c) -> (a -> b) -> a -> c
 ($)    :: (a -> b) -> a -> b
 #+END_SRC
 
 Function ~filter~ takes a function of type ~a -> Bool~ and a list ~[a]~. It returns a list that only contains the elements of the given list that return ~True~ when the given function is applied.
 
+#+BEGIN_SRC haskell
+filter :: (a -> Bool) -> [a] -> [a]
+filter f (x:xs) = if f x then x : filter f xs else filter f xs
+filter f []     = []
+
+filter even [1..5] <=> [2, 4]
+#+END_SRC
+
 ~map~ takes a function and a list and applies the function to every element of the list.
 
 #+BEGIN_SRC haskell
-filter even [1..5] <=> [2, 4]
+map :: (a -> b) -> [a] -> [b]
+map f (x:xs) = f x : map f xs
+map f []     = []
 
 map (*2) [1..5] <=> [2,4,6,8,10]
 #+END_SRC
 
-Let's use this.
+~(.)~ is function composition and ~($)~ is function application.
 
 #+BEGIN_SRC haskell
-evenSum l = mysum $ filter even l
-    where mysum n []     = 0
-          mysum n (x:xs) = mysum (n+x) xs
-#+END_SRC
+(.) :: (b -> c) -> (a -> b) -> a -> c
+(.) f g x = f (g x)
 
-Now, what is ~foldl~?
+($) :: (a -> b) -> a -> b
+($) f x = f x
 
-#+BEGIN_SRC haskell
-foldl :: (a -> b -> a) -> a -> [b] -> a
-foldl op prev []     = prev
-foldl op prev (x:xs) = foldl op (prev `op` x) xs
-#+END_SRC
 
-#+BEGIN_SRC haskell
-foldl f z [x1,x2,x3,x4] <=> f (f (f (f z x1) x2) x3) x4
-#+END_SRC
+f g h x <=> (((f g) h) x)
 
-So let's use it for our problem.
+f g $ h x   <=> f g (h x)
+f $ g h x   <=> f (g h x) <=> f ((g h) x)
+f $ g $ h x <=> f (g (h x))
 
-#+BEGIN_SRC haskell
-evenSum :: Integral a => [a] -> a
-evenSum = foldl (+) 0 . filter even
+(f . g) x     <=> f . g $ x     <=> f (g x)
+(f . g . h) x <=> f . g . h $ x <=> f (g (h x))
 #+END_SRC
 
 *** Defining your own types
-
 **** type
 
 ~type TypeName = AnotherType~ just makes a type synonym of ~String~.
@@ -540,7 +439,6 @@ data Person = Person { name :: String
 This gives us the same ~name~ and ~age~ functions.
 
 *** Recursive types
-
 **** Lists
 
 List is a common example of a recursive type. Here is how we can define the list type:
@@ -588,43 +486,9 @@ data BinTree a = Empty
 
 Because we used an arbitrary type variable ~a~ in the type declaration we can make a lot of different trees. For example we can make trees of trees.
 
-*** Infinite structures
-
-Haskell uses lazy evaluation, which is why we can have infinite data structures. For example in Haskell we can do this:
-
-#+BEGIN_SRC haskell
-numbers :: [Integer]
-numbers = 1 : map (+1) numbers
-
-main = print $ take 3 numbers
-#+END_SRC
-
-The function ~take~ takes the first ~n~ numbers from the given list. If we run this code it won't get stuck in an infinite recursion, it will print ~[1,2,3]~. Because of lazy evaluation Haskell doesn't calculate all the numbers in the list, but only the ones that it needs.
-
-In this example we just have all positive integers. Let's take a look at a more interesting example with a tree.
-
-#+BEGIN_SRC haskell
-tree :: BinTree Integer
-tree = Node 0 (dec tree) (inc tree)
-    where dec (Node x l r) = Node (x-1) (dec l) (dec r)
-          inc (Node x l r) = Node (x+1) (inc l) (inc r)
-#+END_SRC
-
-#+BEGIN_SRC haskell
-        |(-2)..
-  |(-1)-|
-  |     |( 0)..
-0-|
-  |     |( 0)..
-  |( 1)-|
-        |( 2)..
-#+END_SRC
-
-# **** TODO add a nice diagram of the tree
-
-# (Reference: Learn Haskell Fast and Hard) ((I'll do all the references later))
-
 *** Functors
+
+The introduction up to this point is based on an article called "Learn Haskell Fast and Hard".cite:learnhaskellfastandhard
 
 Functor is one of the most important abstractions in Haskell. Basically, it is a type class that generalizes the ~map~ function.
 
@@ -749,12 +613,6 @@ instance Applicative [] where
     []     <*> _  = []
     (f:fs) <*> l  = (f <$> l) ++ (fs <*> l)
     -- applied every function to every element of the list
-
-data Reader r a = Reader { runReader :: r -> a }
-
-instance Applicative (Reader r) where
-    pure g = Reader $ const g -- const :: a -> b -> a
-    f <*> g = Reader $ \r -> runReader f r $ runReader g r
 #+END_SRC
 
 *** Monads
@@ -904,7 +762,7 @@ headOfHead l = do h <- headMay l
 
 To show that Haskell is better than other high-level programming languages I will solve several problems in Haskell and Ruby. Ruby is a high-level programming language, and it is almost the exact opposite of Haskell: it's imperative (although it supports some features from functional programming, as Haskell is one of the languages that Ruby was inspired by, I will avoid using them to show more differences between imperative and functional programming), dynamically typed, interpreted, and object oriented.
 
-*** Example 1: sorting a big file
+*** Example 1: Sorting a file
 
 In this example I will write a script that reads numbers from a file, sorts them, and writes the sorted list to another file. Even though this investigation is about high-level languages, I decided to include a solution to this problem in a low-level language C. I did this to make a more representative performance comparison. In order to show this I will measure time taken for each of the scripts to process a file with one million random integers.
 
@@ -914,7 +772,7 @@ In this example I will implement a client-server system. The client takes an exp
 
 By comparing methods for defining and implementing an API this example is to show Haskell's safety, expressiveness, high-level abstractions, and modularity.
 
-* Sorting a big file
+* Sorting a file
 ** Design
 *** Algorithm
 
@@ -922,6 +780,7 @@ By comparing methods for defining and implementing an API this example is to sho
 
 The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
+#+ATTR_LATEX: :width 8cm
 [[./img/file_sorting_diagram.png]]
 
 *** Tests
@@ -1069,6 +928,8 @@ maybe (print "Failed to parse!")
 #+END_SRC
 
 If we put all these things together we'll get ~main~. In summary, it reads numbers from \texttt{"random\_numbers"}, splits the string with comma separated integers into a list of byte strings with integers, then parses each integer, prints "Failed to parse!" in case it fails to parse, otherwise sorts the list of integers, converts each integer back into a byte string, joins the byte strings and writes the result to \texttt{"haskell\_result"}.
+
+\newpage
 
 **** Ruby
 <<sec:ruby_sorting_code>>
@@ -1235,11 +1096,49 @@ I generated a file with one million random numbers (I changed macro ~SIZE~ in th
 [[./img/sort_performance.png]]
 
 ** Evaluation
-**** Safety
+*** Safety
 
-Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so. This shows how Haskell is a safer language.
+Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so.
 
-**** Expressiveness
+If we ran the Ruby script and data in ~random_numbers~ file was incorrectly formatted then it would through an exception. In Ruby there are two ways of reading an integer from a string: ~Integer~ and method ~String.to_i~. If we pass a string that doesn't represent an integer to ~Integer~, it will throw an exception. If we call ~.to_i~ on that string then it will return ~0~ and we won't know if anything went wrong or not. Here is the Ruby script with exception handling:
+
+#+BEGIN_SRC ruby
+input_file_name = 'random_numbers'
+output_file_name = 'ruby_result'
+
+buffer = ''
+numbers = []
+
+File.open(input_file_name) do |f|
+  begin
+  f.each_char do |c|
+    if c == ','
+      numbers << Integer(buffer)
+      buffer = ''
+    else
+      buffer << c
+    end
+  end
+
+  numbers << Integer(buffer)
+  rescue(ArgumentError)
+    puts 'Failed to parse!'
+    exit
+  end
+end
+
+numbers = numbers.sort
+
+File.open(output_file_name, 'w') do |f|
+  last = numbers.pop
+  numbers.each { |num| f.write "#{num}," }
+  f.write last
+end
+#+END_SRC
+
+This requires more code and it delegates the task of checking whether fail cases were covered from the language to the developer. In Haskell you can write functions that can fail at run-time (but you can disable this using some compiler flags), but if you use a function that through the type system handles fail cases then the compiler will force you to deal with the fact that the function can fail. This makes Haskell a safe language.
+
+*** Expressiveness
 
 As you can see we didn't need a lot of code to solve the problem. If you take a look at the way the algorithm was described in English in [[sec:design_sorting]] you'll see that the code I wrote does exactly that. We basically tell Haskell what we want to achieve and not how to achieve it.
 
@@ -1260,7 +1159,7 @@ main = C.readFile "random_numbers" -- read the file "random_numbers"
 
 In the Ruby solution, as you can see in the source code, the code represents a sequence of instructions which the computer needs to do. The Haskell version of the program has less code in it (even if we remove the comments) and the structure of the Haskell script is closer to the way the problem was defined in English, which shows us the expressiveness of the language.
 
-**** Modularity
+*** Modularity
 
 This script also shows how modular Haskell is. To solve the problem I just glue together 13 different functions using 2 operators. If we want to reuse some of the functionality we can easily extract the piece of code that does what we want from ~main~ and put it in another function. For example, let's say we want to reuse the code for parsing.
 
@@ -1283,11 +1182,9 @@ main = C.readFile "random_numbers"
 
 As you can see, in Haskell it's very easy to compose and decompose code.
 
-**** Performance
+*** Performance
 
-As you can see in the benchmark results, Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast, lists are not very fast, we need to allocate memory very often.
-
-I solved this problem by replacing the sort function. I used unboxed vectors (using ~vector~ library), safe (internal) mutations, and introspective sorting (using ~vector-algorithms~ library).
+As you can see in the benchmark results, Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast (due to algorithm complexity), lists are not very fast (linked lists don't store all the data in one block, they use pointers to reference the next element), we need to allocate memory very often (because we're using an immutable sorting algorithm, so at each step of the algorithm ~sort~ creates new lists). I solved this problem by replacing the sort function. I used unboxed vectors (using ~vector~ library), safe (internal) mutations, and introspective sorting (using ~vector-algorithms~ library).
 
 #+BEGIN_SRC haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -1307,7 +1204,7 @@ main = C.readFile "random_numbers"
              ) . traverse C.readInt . C.split ','
 #+END_SRC
 
-***** Unboxed vectors
+**** Unboxed vectors
 
 ~vector~ library provides efficient arrays. Unboxed types are raw values. So boxed (default) vectors are arrays of pointers and unboxed vectors are arrays of raw values.
 
@@ -1318,7 +1215,7 @@ U.toList :: U.Unbox a => U.Vector a -> [a]
 
 As you can guess from the names and types ~U.fromList~ converts a list of values that can be represented as raw values to an unboxed vector and ~U.toList~ converts an unboxed vector to a list.
 
-***** Introsort
+**** Introsort
 
 Introspective sorting or introsort is an optimised version of quicksort. From the description of the module ~Data.Vector.Algorithms.Intro~:
 
@@ -1329,10 +1226,10 @@ Introsort is at its core a quicksort. The version implemented here has the follo
 
 - Small segments of the array are left unsorted until a final insertion sort pass. This is faster than recursing all the way down to one-element arrays.
 - The pivot for segment [l,u) is chosen as the median of the elements at l, u-1 and (u+l)/2. This yields good behavior on mostly sorted (or reverse-sorted) arrays.
-- The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).
+- The algorithm tracks its recursion depth, and if it decides it is taking too long (depth greater than 2 * lg n), it switches to a heap sort to maintain O(n lg n) worst case behavior. (This is what makes the algorithm introsort).cite:introspectivesort
 #+END_QUOTE
 
-***** Safe internal mutations
+**** Safe internal mutations
 
 Let's take a look at types of ~U.modify~ and ~Alg.sort~.
 
@@ -1370,13 +1267,13 @@ Alg.sort
 U.modify Alg.sort :: (Ord a, U.Unbox a) => U.Vector a -> U.Vector a
 #+END_SRC
 
-***** The result of the optimizations
+**** The result of the optimizations
 
 [[./img/optimised_haskell_sort.png]]
 
 As you can see this significantly improved performance. If this still isn't fast enough for you, there are other optimizations that can be done: you can use the foreign function interface to call C functions, reduce the number of different conversions in the script, completely get rid of lists, etc. This shows that Haskell can have decent performance. Depending on what application you're developing you can optimize Haskell to get the performance you need. It's still slower than low-level languages like C, but if you really need certain parts of your code to perform really well then you can use foreign function interface and call C code from Haskell.
 
-**** Abstractions
+*** Abstractions
 
 This example also shows what Haskell's high level abstractions can do. A good example of the language's use of high-level abstractions from the optimized version of the script is how Haskell uses type system to ensure that a state mutating computation is pure using ~ST~ monad. The type system plays a big role in Haskell. Haskell's type system is very strict, but at the same time it uses type variables and type classes, making the language very flexible and allowing you to define the most general versions of functions, variables, etc.
 
@@ -1399,10 +1296,12 @@ Parsing expressions in reverse polish notation:
 
 Server:
 
+#+ATTR_LATEX: :width 10cm
 [[./img/reverse_polish_server.png]]
 
 Client:
 
+#+ATTR_LATEX: :width 10cm
 [[./img/client_flowchart.png]]
 
 *** Tests
@@ -1542,7 +1441,6 @@ import           Safe
 import           Servant
 
 import qualified Data.Text.IO             as TIO
-import qualified Lackey
 
 import qualified API
 
@@ -1854,6 +1752,9 @@ class MainController < ApplicationController
 end
 #+END_SRC
 
+
+\newpage
+
 ***** Client
 
 #+BEGIN_SRC ruby
@@ -1905,25 +1806,36 @@ else
 end
 #+END_SRC
 
+
+\newpage
+
 *** Tests
 **** Haskell
 
 I ran all the tests from the test table and got the expected result for each test.
 
+#+ATTR_LATEX: :width 13cm
 [[./img/polish_haskell_test.png]]
 
 ~./server &~ executes binary file ~server~ in the background.
+
+\newpage
 
 **** Ruby
 
 I ran all the tests from the test table and got the expected result for each test.
 
+#+ATTR_LATEX: :width 10cm
 [[./img/polish_ruby_client_test.png]]
+
+\newpage
 
 I started the server in another window, because it shows logs that I don't need for the tests.
 
 [[./img/polish_ruby_server_test.png]]
 
+
+\newpage
 *** Benchmark
 
 I modified the Haskell version of the client side to compare performances of the server.
@@ -1947,25 +1859,29 @@ To run the benchmark I used several Linux commands. ~>~ operator forwards output
 
 **** Haskell
 
+#+ATTR_LATEX: :width 13cm
 [[./img/polish_haskell_performance.png]]
 
 **** Ruby
 
+#+ATTR_LATEX: :width 13cm
 [[./img/polish_ruby_performance.png]]
 
 ** Evaluation
-**** Safety
+*** Safety
 
 In this example I defined an API using types. This approach ensures that the implementation of the server corresponds to the API definition. For example, we can be absolutely sure that /check takes a string and returns a boolean. In the ruby version of the server we don't have that safety. We can accidentally return the result in a wrong format or return nothing at all. Also, with this approach you only use the parameters of the request that you specified in the API type. For example if all you need from a request is the body then you define the type with ~ReqBody~ and get the contents of the request body. If the request data that you can access is restricted by the type then there are less mistakes you can possibly make when you implement the API. When you are implementing your API using Servant you only think about the logic of your code, things like encoding and decoding data are done automatically through type classes. This also reduces the number of possible bugs.
 
-**** Expressiveness
+*** Expressiveness
 
 Just by looking at the number of lines of code that I wrote we can see how Haskell is more expressive.
 
+#+ATTR_LATEX: :align |l|l|
 |----------+---------------------------------|
 | Language | Lines of code (client + server) |
 |----------+---------------------------------|
 | Haskell  |                             108 |
+|----------+---------------------------------|
 | Ruby     |                             179 |
 |----------+---------------------------------|
 
@@ -1996,46 +1912,28 @@ parse = flip parseAccum [] . words
 
 As I mentioned in the evaluation of safety the implementation of the API contains only the logic of the application. This feature not only makes the code safer, but also makes it more expressive. This shows that Haskell is very expressive.
 
-**** High level abstractions
+*** High level abstractions
 
 Defining an API in terms of types is a great example of Haskell's high level abstractions. In most languages even if you have a type system you can't do anything like this. First of all you can't define readable type-level grammar. Also even if you somehow manage to define types that can be used for constructing a type that represents an arbitrary REST API, the constructed type will be useless because the majority of languages don't support type-level functions. So you won't be able to type check the implementation of your API.
 
 The point I made about only describing logic in the implementation of the server is also relevant to this discussion. The way Servant encodes and decodes data to the right formats just by looking at the type definition of your API is also a great example of using abstractions in Haskell. But you can go even further and define an API type using type variables and then implement it once for an arbitrary type variable that is constraint by type classes that are required for encoding, decoding, etc. This can be useful if, for example, you need the same CRUD (create, read, update delete) API for several entities. All these features of the type system give Haskell support for all kinds of different abstractions.
 
-**** Modularity
+*** Modularity
 
-The fact that you can use types to define APIs is good for modularity. You can define parts of your API and then compose them. Also you can use the approach I mentioned in the previous section.
+The fact that you can use types to define APIs is good for modularity. You can define parts of your API and then compose them. Also you can use the approach I mentioned in the previous section. For example if you have two projects that have APIs ~API1~ and ~API2~ respectively and implementation of the APIs ~server1~ and ~server2~ then merging these projects into one bigger project will take very little code.
 
 #+BEGIN_SRC haskell
--- ...
-type Create a = ReqBody '[JSON] a :> Post '[JSON] a
-
-type Read a = Get '[JSON, PlainText] a
-
-data User = -- ...
-
-type UserAPI = Create User :<|> Read User
-
-userServer :: Server UserAPI
-userServer = -- ...
-
-data Mail = -- ...
-
-type MailsAPI = Create Mail :<|> Read Mail
-
-mailServer :: Server MailAPI
-mailServer = -- ...
-
-type API = "users" :> UserAPI
-      :<|> "mails" :> MailAPI
+type API = API1 :<|> API2
 
 server :: Server API
-server = userServer :<|> mailServer
+server = server1 :<|> server2
 #+END_SRC
+
+And then, of course, you need to remove code that serves the original apps and serve the new app. On the other hand, with Ruby on Rails the easiest way to achieve this would be to make a service app that calls the APIs, but this will be slow and hard to maintain. You can also use mountable engines, which is hard.
 
 As you can see defining APIs using types is good for modularity. Haskell itself is very modular. And its high level abstractions allow developers to use standard (more or less) tools when they develop libraries. So, for example, grammar for defining APIs can be embedded directly into the language. This means that you can write modular code and then easily reuse it. You can also extend the grammar by providing the required type class instances for your types and type combinators. This shows that Haskell has good modularity.
 
-**** Performance
+*** Performance
 
 The benchmark shows that the Haskell version of the server is more than 3 times faster than the Ruby version. However, this comparison is not very fair because for the Ruby version of the server I used a big framework, which was unnecessary.
 
@@ -2096,24 +1994,15 @@ These features make Haskell code reusable.
 
 ** Performance
 
-In both examples Haskell performed better than Ruby. In the first example I did some optimizations, but for most of the code I kept things simple. High-level programming languages don't have to be very fast and they are usually slower than low-level programming languages, however, as Jan Stolarek showed in his [[http://lambda.jstolarek.com/2013/04/haskell-as-fast-as-c-a-case-study/][blog]], Haskell code can be as fast as C code. Also Haskell has a foreign function interface that lets you call C code from Haskell. Facebook's spam filtering system is implemented in Haskell and C++ and it handles millions of requests per second. In conclusion, Haskell's performance is good for most use cases, and if for some parts of your program you need higher performance then you can use the foreign function interface and implement it in C.
+In both examples Haskell performed better than Ruby. In the first example I did some optimizations, but for most of the code I kept things simple. High-level programming languages don't have to be very fast and they are usually slower than low-level programming languages, however, as Jan Stolarek showed in his blog, Haskell code can be as fast as C code.cite:chaskell Also Haskell has a foreign function interface that lets you call C code from Haskell. Facebook's spam filtering system is implemented in Haskell and C++ and it handles millions of requests per second. In conclusion, Haskell's performance is good for most use cases, and if for some parts of your program you need higher performance then you can use the foreign function interface and implement it in C.
 
 ** Final conclusion
 
-As I showed in this investigation, there are a lot of benefits to using Haskell for developing applications. It's safety, expressiveness, level of abstraction, modularity, and performance allow programmers to quickly and easily write code that is safe, stable, easy to refactor, and has low defect rate. Of course it has some disadvantages, like the fact that currently not many software developers know Haskell or that it can be hard to learn as most coders are not used to thinking about problems in functional/declarative manner. In conclusion, if one's team of developers can work in Haskell then for developing most kinds of applications (except for drivers, 3d games, and other applications that require the best possible performance) Haskell will be one of the best programming languages to use. cite:chaskell 
+As I showed in this investigation, there are a lot of benefits to using Haskell for developing applications. It's safety, expressiveness, level of abstraction, modularity, and performance allow programmers to quickly and easily write code that is safe, stable, easy to refactor, and has low defect rate. Of course it has some disadvantages, like the fact that currently not many software developers know Haskell or that it can be hard to learn as most coders are not used to thinking about problems in functional/declarative manner. In conclusion, if one's team of developers can work in Haskell then for developing most kinds of applications (except for drivers, 3d games, and other applications that require the best possible performance) Haskell will be one of the best programming languages to use.
 
-* Links
-[[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
-
-[[https://wiki.haskell.org/Why_Haskell_matters]]
-
-[[https://github.com/Gabriel439/post-rfc/blob/master/sotu.md]]
-
-[[http://lambda.jstolarek.com/2013/04/haskell-as-fast-as-c-a-case-study/]]
-
-#  LocalWords:  Stolarek
-
-# to make this work use latexmk
 
 bibliographystyle:unsrt
 bibliography:README.bib
+
+# to make this work use latexmk
+#  LocalWords:  Stolarek
