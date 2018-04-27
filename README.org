@@ -11,8 +11,6 @@
 
 #+OPTIONS: toc:nil title:nil
 
-bibliography:README.bib
-
 \begin{titlepage}
   \begin{center}
     \line(1,0){300} \\
@@ -2102,7 +2100,7 @@ In both examples Haskell performed better than Ruby. In the first example I did 
 
 ** Final conclusion
 
-As I showed in this investigation, there are a lot of benefits to using Haskell for developing applications. It's safety, expressiveness, level of abstraction, modularity, and performance allow programmers to quickly and easily write code that is safe, stable, easy to refactor, and has low defect rate. Of course it has some disadvantages, like the fact that currently not many software developers know Haskell or that it can be hard to learn as most coders are not used to thinking about problems in functional/declarative manner. In conclusion, if one's team of developers can work in Haskell then for developing most kinds of applications (except for drivers, 3d games, and other applications that require the best possible performance) Haskell will be one of the best programming languages to use.
+As I showed in this investigation, there are a lot of benefits to using Haskell for developing applications. It's safety, expressiveness, level of abstraction, modularity, and performance allow programmers to quickly and easily write code that is safe, stable, easy to refactor, and has low defect rate. Of course it has some disadvantages, like the fact that currently not many software developers know Haskell or that it can be hard to learn as most coders are not used to thinking about problems in functional/declarative manner. In conclusion, if one's team of developers can work in Haskell then for developing most kinds of applications (except for drivers, 3d games, and other applications that require the best possible performance) Haskell will be one of the best programming languages to use. cite:chaskell 
 
 * Links
 [[http://benchmarksgame.alioth.debian.org/u64q/haskell.html]]
@@ -2115,3 +2113,7 @@ As I showed in this investigation, there are a lot of benefits to using Haskell 
 
 #  LocalWords:  Stolarek
 
+# to make this work use latexmk
+
+bibliographystyle:unsrt
+bibliography:README.bib
