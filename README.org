@@ -913,11 +913,47 @@ By comparing methods for defining and implementing an API this example is to sho
 
 * Sorting a big file
 ** Design
+*** Algorithm
+
 <<sec:design_sorting>>
 
 The script needs to read the file \texttt{"random\_numbers"}, which contains comma-separated integers, parse the contents to get the list of integers, sort them, convert back to the original format, and write the result to the file ="{language}_result"= (where ={language}= is the name of the language that was used for the script).
 
 [[./img/file_sorting_diagram.png]]
+
+*** Tests
+
+For testing the scripts I will write another script that generates a comma-separated list of integers in range $[1,1000]$.
+# | / | <17>              | <35>                                | <40>                                     |
+
+#+ATTR_LATEX: :align |r|l|l|l| :center
+|---+-------------------+------------------------------------------------+------------------------------------------|
+| - | Description       | Test instructions                              | Expected Result                          |
+|---+-------------------+------------------------------------------------+------------------------------------------|
+| / |                   |                                                |                                          |
+| # | Number generating | Run the script to generate a file              | Comma-separated list of integers in      |
+|   | script should     | with 10 numbers. Inspect the file.             | both files. The files should be          |
+|   | work correctly.   | Run the script again and inspect               | different (though there is a small       |
+|   |                   | the new file.                                  | chance that the files will be the same   |
+|   |                   |                                                | , in this case just run the test         |
+|   |                   |                                                | again).                                  |
+|---+-------------------+------------------------------------------------+------------------------------------------|
+| # | Outputs of the    | Generate a file with 10 integers, inspect it,  | Sorted comma-separated list of integers. |
+|   | scripts for the   | run the script and inspect the output file.    | With all the numbers from the randomly   |
+|   | same list of      | Generate a new file. Repeat the test.          | generated file.                          |
+|   | integers should   |                                                |                                          |
+|   | be the same.      |                                                |                                          |
+|---+-------------------+------------------------------------------------+------------------------------------------|
+| # | Output of the     | Generate a file with 10 integers, run all 3    | There should be no differences.          |
+|   | sorting scripts   | sorting scripts, check differences between the |                                          |
+|   | for the same list | output files.                                  |                                          |
+|   | of integers       |                                                |                                          |
+|   | is the same.      |                                                |                                          |
+|---+-------------------+------------------------------------------------+------------------------------------------|
+
+*** Benchmark
+
+Generate a file with 1 million random integers, find how much time each script takes to execute.
 
 ** Solution
 *** Code
@@ -1199,7 +1235,17 @@ I changed ~SIZE~ macro in the C script to ~10~ for the purpose of the test.
 
 [[./img/sort_test.png]]
 
-*** Evaluation
+I used some Linux commands to run the test. =cat= takes a file name and shows the file (if it exists). The scripts I wrote don't add a newline character at the end of files. To get a newline after the output of =cat=, I used =echo= command. It takes a string and prints it, I didn't give it any input, so it just print a newline. =diff= command shows differences between 2 files.
+
+First I ran the first test to check that the number generating script works correctly. As you can see, it does. Then I ran all 3 sorting scripts, and did the second test on the output of the script written in Haskell. =haskell_result= contains the sorted list, so the test is passed. Then I ran test 3 and compared the 3 output files. =diff= command didn't show any differences, hence all the scripts work correctly.
+
+*** Benchmark
+
+I generated a file with one million random numbers (I changed macro ~SIZE~ in the C script back to a million) and measured the execution time using =time= command and tested that the output is correct by doing test 3 again.
+
+[[./img/sort_performance.png]]
+
+** Evaluation
 **** Safety
 
 Let's take a look at the function ~C.readInt~. It returns ~Maybe (Int, C.ByteString)~. In most languages you can work with nullable types without checking if they are actually null, but Haskell doesn't allow that. It forces you to do something with the fact that a value can be ~Nothing~. In this case I covered the case when it's ~Nothing~ by using the function ~maybe~ and providing the default behavior for that situation. If you want you can unsafely cast ~Maybe a~ to ~a~ using the function ~fromJust~ from the ~Data.Maybe~ module. However, the compiler won't make that decision for you and you'll have to explicitly tell it to do so. This shows how Haskell is a safer language.
@@ -1250,11 +1296,7 @@ As you can see, in Haskell it's very easy to compose and decompose code.
 
 **** Performance
 
-To test performance I generated a file with one million random numbers (I changed macro ~SIZE~ in the C script back to a million) and measured the execution time.
-
-[[./img/sort_performance.png]]
-
-As you can see Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast, lists are not very fast, we need to allocate memory very often.
+As you can see in the benchmark results, Haskell didn't perform very well in this test. Why is that? I used ~sort~ function that applies mergesort algorithm on immutable lists. This is a problem for performance for several reasons: mergesort is not very fast, lists are not very fast, we need to allocate memory very often.
 
 I solved this problem by replacing the sort function. I used unboxed vectors (using ~vector~ library), safe (internal) mutations, and introspective sorting (using ~vector-algorithms~ library).
 
@@ -1864,7 +1906,7 @@ end
 
 [[./img/polish_ruby_client_test.png]]
 
-*** Evaluation
+** Evaluation
 **** Safety
 
 In this example I defined an API using types. This approach ensures that the implementation of the server corresponds to the API definition. For example, we can be absolutely sure that /check takes a string and returns a boolean. In the ruby version of the server we don't have that safety. We can accidentally return the result in a wrong format or return nothing at all. Also, with this approach you only use the parameters of the request that you specified in the API type. For example if all you need from a request is the body then you define the type with ~ReqBody~ and get the contents of the request body. If the request data that you can access is restricted by the type then there are less mistakes you can possibly make when you implement the API. When you are implementing your API using Servant you only think about the logic of your code, things like encoding and decoding data are done automatically through type classes. This also reduces the number of possible bugs.
