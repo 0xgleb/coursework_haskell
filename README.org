@@ -7,8 +7,11 @@
 #+LATEX_HEADER: \newcolumntype{^}{>{\currentrowstyle}}
 #+LATEX_HEADER: \newcommand{\rowstyle}[1]{\gdef\currentrowstyle{#1} #1\ignorespaces}
 #+LATEX_HEADER: \usepackage{indentfirst}
+# #+LATEX_HEADER: \usepackage{biblatex}
 
 #+OPTIONS: toc:nil title:nil
+
+bibliography:README.bib
 
 \begin{titlepage}
   \begin{center}
@@ -2111,3 +2114,4 @@ As I showed in this investigation, there are a lot of benefits to using Haskell 
 [[http://lambda.jstolarek.com/2013/04/haskell-as-fast-as-c-a-case-study/]]
 
 #  LocalWords:  Stolarek
+
